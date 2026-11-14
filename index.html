@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mobiliário Termômetro</title>
+<style>
+  :root { --bg:#16181d; --painel:#1e2128; --txt:#d8dade; --sub:#9aa0aa; --borda:#2d313a; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:14px system-ui, sans-serif; }
+  .wrap { max-width:1320px; margin:0 auto; padding:14px 16px 30px; }
+  h1 { font-size:18px; margin:4px 0 2px; } .sub { color:var(--sub); font-size:12.5px; margin-bottom:10px; line-height:1.5; }
+  .grid { display:grid; grid-template-columns: minmax(0,1.6fr) minmax(0,1fr); gap:14px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card { background:var(--painel); border:1px solid var(--borda); border-radius:8px; padding:10px; }
+  #vistaPecas { width:100%; aspect-ratio: 16 / 9; border-radius:6px; overflow:hidden; background:#13151a; touch-action:none; }
+  #vista { width:100%; aspect-ratio: 4 / 3; border-radius:6px; overflow:hidden; background:#13151a; touch-action:none; }
+  .ctl { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0; font-size:12.5px; }
+  button, select, input[type=number] { background:#2a2f38; color:var(--txt); border:1px solid #3a404b; border-radius:6px; padding:4px 7px; font-size:12.5px; }
+  button { cursor:pointer; } input[type=number] { width:70px; }
+  input[type=range] { width:120px; }
+  .info { font-size:12.5px; line-height:1.6; }
+  .k { color:var(--sub); }
+  h2 { font-size:14px; margin:12px 0 4px; }
+  table { border-collapse:collapse; font-size:12.5px; margin-top:4px; width:100%; }
+  td, th { padding:3px 6px; border-bottom:1px solid var(--borda); text-align:right; } th:first-child, td:first-child { text-align:left; }
+  tr.tot td { font-weight:600; border-bottom:none; }
+  label.cb { white-space:nowrap; }
+  .livre { display:grid; grid-template-columns: 1fr 1.6fr; gap:8px; margin:4px 0 10px; }
+  .livre > div { background:#252a33; border:1px solid #3a404b; border-radius:8px; padding:8px 10px; }
+  .livre .t { font-size:11.5px; color:var(--sub); text-transform:uppercase; letter-spacing:.04em; }
+  .livre .v { font-size:22px; font-weight:600; margin:2px 0; font-variant-numeric: tabular-nums; }
+  .livre .n { font-size:11.5px; color:var(--sub); line-height:1.4; }
+  .livre .ruim { color:#ff7d6b; }
+  .sw { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>OS-2026-0857 · Mobiliário Termômetro das Competências — caixa de MDF + estrutura</h1>
+  <div class="sub">Caixa de MDF aberta em cima, faces aparafusadas numa estrutura interna de tubo de alumínio 19×19 mm
+  com conectores de PETG (3 eixos nos cantos, T nos reforços). Arraste para girar, roda/pinça para zoom, botão direito/dois dedos ou setas do teclado para mover.
+  Eixos: X = largura, Y = profundidade, Z = altura; origem no canto inferior esquerdo da frente.</div>
+  <div class="grid">
+    <div class="card">
+      <div id="vista"></div>
+      <div class="ctl">
+        vista: <button data-v="iso">isométrica</button><button data-v="frente">frente</button><button data-v="lado">lado</button><button data-v="topo">topo</button><button data-v="corte">corte</button>
+      </div>
+      <div class="ctl">
+        <label class="cb"><input type="checkbox" id="cMontada"> <b>visualização MONTADA</b></label>
+        cor do MDF <input type="color" id="corMontada" value="#004170">
+        <span class="k">MDF pintado, tampa no lugar, tubos de pé nos copos</span>
+      </div>
+      <div class="ctl">
+        <label class="cb"><input type="checkbox" id="cBolas" checked> bolinhas nos tubos</label>
+        Ø <input type="number" id="pBD" step="1"> quantidade <input type="number" id="pBN" step="5"> ± <input type="number" id="pBV" step="5">
+        semente <input type="number" id="pBS" step="1"> <button id="bSortear">sortear</button>
+        <button id="bGlb">exportar GLB (Blender)</button> <button id="bJson">exportar JSON</button>
+      </div>
+      <div class="info k" id="infoBolas"></div>
+      <div class="ctl">
+        <label class="cb"><input type="checkbox" id="cCorte"> plano de corte (largura)</label>
+        <input type="range" id="rCorte" min="0" max="1500" step="1" value="200" style="width:260px">
+        X = <input type="number" id="nCorte" step="1" value="200"> mm
+        <select id="sCorte"><option value="1">mostrar à direita do corte</option><option value="-1">mostrar à esquerda do corte</option></select>
+      </div>
+      <div class="ctl">
+        <label class="cb"><input type="checkbox" id="cMdf" checked> MDF</label>
+        opacidade <input type="range" id="rAlpha" min="0.1" max="1" step="0.05" value="0.35">
+        <label class="cb"><input type="checkbox" id="cFrente" checked> face da frente</label>
+        <label class="cb"><input type="checkbox" id="cTubos" checked> tubos</label>
+        <label class="cb"><input type="checkbox" id="cCon" checked> conectores</label>
+        <label class="cb"><input type="checkbox" id="cAcr" checked> tubos de acrílico</label>
+        <label class="cb"><input type="checkbox" id="cInf" checked> suporte inferior</label>
+        <label class="cb"><input type="checkbox" id="cSup" checked> suporte intermediário</label>
+        <label class="cb"><input type="checkbox" id="cTop" checked> suporte superior</label>
+        <label class="cb"><input type="checkbox" id="cPino" checked> pinos</label>
+        <label class="cb"><input type="checkbox" id="cFundo" checked> placa de posicionamento</label>
+        <label class="cb"><input type="checkbox" id="cTampa" checked> tampa</label>
+        <label class="cb"><input type="checkbox" id="cCopo" checked> copos</label>
+        <input type="range" id="rCopo" min="0.1" max="1" step="0.05" value="0.55" title="opacidade dos copos">
+        <label class="cb"><input type="checkbox" id="cAnel" checked> anéis de acabamento</label>
+        <input type="range" id="rAnel" min="0.1" max="1" step="0.05" value="0.5" title="opacidade dos anéis">
+        <select id="sTampa"><option value="local">tampa no local</option><option value="baixo">tampa embaixo (caixa sobre ela)</option><option value="alta">tampa a 50 cm</option></select>
+      </div>
+      <h2>Peças do suporte (impressão 3D) <button id="bEnq" style="margin-left:8px">enquadrar</button></h2>
+      <div id="vistaPecas"></div>
+      <div class="info k" style="margin-top:6px">Seis modelos, afastados na vertical na ordem de montagem: inferior (azul), intermediário (verde) e superior (roxo).
+        À esquerda a peça externa, com a placa cega; à direita a interna. Os pinos (cinza) ficam metade em cada peça; os furos correspondentes
+        entram quando o modelo for gerado para impressão.</div>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">Parâmetros (mm)</h2>
+      <div class="ctl">largura <input type="number" id="pW" step="10"> altura <input type="number" id="pH" step="10"> profundidade <input type="number" id="pD" step="10"></div>
+      <div class="ctl">MDF <input type="number" id="pT" step="1"> tubo <input type="number" id="pP" step="1"></div>
+      <div class="ctl">reforços por face de largura <input type="number" id="pN" step="1" min="0" max="6">
+        rebaixo dos tubos de cima <input type="number" id="pR" step="1" min="0"></div>
+      <div class="ctl">tubos de acrílico: comprimento <input type="number" id="pAL" step="10"> Ø externo <input type="number" id="pAD" step="1"> parede <input type="number" id="pAE" step="0.5"> folga mínima <input type="number" id="pAG" step="1"></div>
+      <div class="ctl">suportes: estações <input type="number" id="pSN" step="1" min="2" max="8"> largura da placa <input type="number" id="pSE" step="1"> forro EVA <input type="number" id="pEV" step="0.5">
+        seção mínima <input type="number" id="pPM" step="1"> placa cega <input type="number" id="pCB" step="1"> fillet do intermediário <input type="number" id="pRF" step="1"></div>
+      <div class="ctl">placa de posicionamento (fundo) <input type="number" id="pPF" step="1"> <span class="k">0 = sem placa</span></div>
+      <div class="ctl">pinos de encaixe: Ø <input type="number" id="pPD" step="1"> comprimento <input type="number" id="pPL" step="1"> <span class="k">cavilha / barra roscada</span></div>
+      <div class="ctl">tampa: altura <input type="number" id="pLH" step="5"> furos: Ø <input type="number" id="pFD" step="1"> passo <input type="number" id="pFP" step="5"></div>
+      <div class="ctl">copos: folga no Ø <input type="number" id="pCF" step="0.5"> altura interna <input type="number" id="pCI" step="5"> aba <input type="number" id="pCA" step="1">
+        anel de acabamento <input type="number" id="pAR" step="1"> parafusos por copo <input type="number" id="pNF" step="1"> Ø <input type="number" id="pFF" step="0.5"></div>
+      <div class="ctl k">Copo por dentro da tampa: corpo Ø furo, cone de 45° até a aba (Ø furo + 2 × aba) encostada no tampo, gargalo passando no furo;
+        anel de acabamento por cima; parafusos passantes anel + MDF + aba. Parede = (Ø furo − Ø tubo − folga) / 2.</div>
+      <div class="ctl"><button id="bReset">valores padrão</button></div>
+      <div class="livre" id="livre"></div>
+      <div class="info k" id="aviso"></div>
+      <h2>Chapas de MDF</h2>
+      <table id="tMdf"></table>
+      <h2>Tubos de alumínio (lista de corte)</h2>
+      <table id="tTubos"></table>
+      <h2>Conectores PETG</h2>
+      <table id="tCon"></table>
+      <h2>Tubos de acrílico e suportes</h2>
+      <table id="tAcr"></table>
+      <div class="info k" id="folgas" style="margin-top:6px"></div>
+      <div class="info k" style="margin-top:10px">
+        Premissas deste desenho: frente e traseira inteiras (L × A); laterais entre eles; base entre as quatro paredes.
+        Tubos rentes à face interna das chapas; tubos de cima rebaixados da borda das chapas (assento da tampa).
+        Tubos de largura inteiros entre os cantos; as colunas de reforço apoiam neles por um espigão PETG
+        fixado na face do tubo, com parafuso autobrocante (desligue "tubos" para ver os espigões).
+        Conector 3 eixos representado como nó de 19 mm (geometria real a definir); o tubo termina na face do nó.
+        Tubos de acrílico encostados no lado esquerdo; suportes das pontas com placa cega do lado de fora (trava axial).
+        Placa de posicionamento no vão entre os tubos de baixo da estrutura, com furos passantes onde encaixam os pés dos suportes inferiores.
+        Tampa: caixa invertida com a mesma planta, tubos nas 12 arestas internas; os tubos de baixo descem o rebaixo abaixo das chapas,
+        encaixam na boca da caixa e apoiam nos tubos da borda dela. Espaçadores impressos (40 mm, a desenhar) no lugar dos reforços.
+        Tampo da tampa com 5 furos em linha no meio da profundidade; copos impressos com Ø externo = Ø do furo, topo rente ao tampo,
+        Ø interno = Ø do tubo + folga (folga final a ajustar com os tubos em mãos).
+        Níveis do suporte travados entre si por pinos verticais (cavilha ou barra roscada) no meio das seções de 20 mm.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "polygon-clipping": "https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/+esm"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import pc from 'polygon-clipping';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
+const PADRAO = { W:1500, H:530, D:640, T:6, P:19, N:2, R:6,
+                 AL:1000, AD:200, AE:4, AG:20, SN:4, SE:30, EV:3, PM:20, CB:4, PF:6, RF:30, LH:100,
+                 PD:8, PL:30, FD:210, FP:300, CF:1, CI:70, CA:20, AR:15, NF:4, FF:4,
+                 BD:55, BN:120, BV:30, BS:78557 };
+const CHAVE = 'termometro-mobiliario-v12';  // nova chave: valem os padrões atuais
+const BASE_SUP = 20;      // material do suporte abaixo dos tubos de baixo
+const FOLGA_LAT = 8;      // do suporte até a face dos tubos da estrutura (frente/trás)
+const MARGEM_FUNDO = 10;  // da borda da placa de posicionamento até o suporte da ponta
+const FOLGA_ENC = 0.5;    // folga do encaixe dos pés na placa de posicionamento
+const ESP_PAREDE = 1;   // parede do tubo; o espigão entra no furo interno
+const ESP_COMPR = 30;   // comprimento do espigão dentro da coluna (protótipo a medir)
+const ESPAC_L = 40;     // largura (em X) do espaçador impresso da tampa
+const POS_TAMPA_ALTA = 500;  // tampa suspensa: borda de baixo 50 cm acima da caixa
+// competências: tubo 1 a 5, na ordem, com a cor padronizada das bolinhas e da plaqueta
+const COMPETENCIAS = ['ADAPTABILIDADE', 'COLABORAÇÃO', 'INOVAÇÃO', 'ORIENTAÇÃO PARA RESULTADOS', 'LIDERANÇA PELO EXEMPLO'];
+const CORES_BOLAS = [['adaptabilidade', 0x043d8c], ['colaboracao', 0x00c8f0], ['inovacao', 0x6789b7],
+                     ['orientacao_resultados', 0xabe84d], ['lideranca_exemplo', 0x969696]];
+const COPO_FUNDO = 3;   // espessura do fundo do copo impresso
+const FOLGA_ABA = 1;    // do recorte da aba dos copos das pontas até a face dos tubos da tampa
+const N_COPOS = 5;     // um furo/copo por tubo de acrílico
+const EXPLODE = 70;    // afastamento vertical entre os níveis na vista das peças
+let par = { ...PADRAO };
+try { Object.assign(par, JSON.parse(localStorage.getItem(CHAVE) || '{}')); } catch (e) {}
+
+const COR = { mdf:0xc9a77c, tubo:0xb8bec7, con:0xf28c28 };
+
+// ------------------------------------------------------------ geometria
+// Cada peça é uma caixa alinhada aos eixos: {grupo, nome, x0,y0,z0, dx,dy,dz}
+function pecas(p) {
+  const { W, H, D, T, P, N } = p;
+  const L = [];
+  const add = (grupo, nome, x0, y0, z0, dx, dy, dz) => L.push({ grupo, nome, x0, y0, z0, dx, dy, dz });
+
+  // chapas
+  add('mdf', 'Frente', 0, 0, 0, W, T, H);
+  add('mdf', 'Traseira', 0, D - T, 0, W, T, H);
+  add('mdf', 'Lateral esquerda', 0, T, 0, T, D - 2 * T, H);
+  add('mdf', 'Lateral direita', W - T, T, 0, T, D - 2 * T, H);
+  add('mdf', 'Base', T, T, 0, W - 2 * T, D - 2 * T, T);
+
+  // vão interno; tubos de cima rebaixados R da borda das chapas (espaço para a tampa)
+  const xa = T, xb = W - T - P, ya = T, yb = D - T - P, za = T, zb = H - p.R - P;
+
+  // nós de canto (conector 3 eixos)
+  for (const x of [xa, xb]) for (const y of [ya, yb]) for (const z of [za, zb])
+    add('con3', 'Conector 3 eixos', x, y, z, P, P, P);
+
+  // posições dos reforços ao longo de X (vãos livres iguais entre colunas)
+  const vao = (xb - xa - P - N * P) / (N + 1);
+  const xr = [];
+  for (let k = 1; k <= N; k++) xr.push(xa + P + k * vao + (k - 1) * P);
+
+  // tubos ao longo de X (frente/trás, embaixo/em cima), inteiros entre os cantos
+  for (const y of [ya, yb]) for (const z of [za, zb])
+    add('tubo', 'Tubo X', xa + P, y, z, xb - xa - P, P, P);
+  // tubos ao longo de Y (laterais, embaixo/em cima)
+  for (const x of [xa, xb]) for (const z of [za, zb])
+    add('tubo', 'Tubo Y', x, ya + P, z, P, yb - ya - P, P);
+  // colunas de canto
+  for (const x of [xa, xb]) for (const y of [ya, yb])
+    add('tubo', 'Coluna de canto', x, y, za + P, P, P, zb - za - P);
+  // reforços verticais nas faces de largura, apoiados nos tubos X; o conector T é um
+  // espigão fixado na face do tubo X que entra na ponta da coluna (dimensões a confirmar)
+  const ei = P - 2 * ESP_PAREDE, ec = ESP_COMPR;
+  for (const y of [ya, yb]) for (const x of xr) {
+    add('tubo', 'Coluna de reforço', x, y, za + P, P, P, zb - za - P);
+    add('conT', 'Conector T (espigão)', x + ESP_PAREDE, y + ESP_PAREDE, za + P, ei, ei, ec);
+    add('conT', 'Conector T (espigão)', x + ESP_PAREDE, y + ESP_PAREDE, zb - ec, ei, ei, ec);
+  }
+
+  // tampa: caixa invertida W × D × LH, em coordenadas próprias (z = 0 na borda de baixo
+  // das chapas). Os tubos de baixo descem R abaixo das chapas e encaixam no rebaixo da
+  // caixa, apoiando nos tubos da borda dela. Sem colunas de reforço: só espaçadores
+  // impressos (a desenhar) na mesma posição X dos reforços da caixa.
+  const LH = p.LH, n0 = L.length;
+  add('mdf', 'Tampa — Frente', 0, 0, 0, W, T, LH);
+  add('mdf', 'Tampa — Traseira', 0, D - T, 0, W, T, LH);
+  add('mdf', 'Tampa — Lateral esquerda', 0, T, 0, T, D - 2 * T, LH);
+  add('mdf', 'Tampa — Lateral direita', W - T, T, 0, T, D - 2 * T, LH);
+  add('mdf', 'Tampa — Topo', T, T, LH - T, W - 2 * T, D - 2 * T, T);
+  const ta = -p.R, tb = LH - T - P;
+  for (const x of [xa, xb]) for (const y of [ya, yb]) for (const z of [ta, tb])
+    add('con3', 'Conector 3 eixos', x, y, z, P, P, P);
+  for (const y of [ya, yb]) for (const z of [ta, tb])
+    add('tubo', 'Tampa — Tubo X', xa + P, y, z, xb - xa - P, P, P);
+  for (const x of [xa, xb]) for (const z of [ta, tb])
+    add('tubo', 'Tampa — Tubo Y', x, ya + P, z, P, yb - ya - P, P);
+  for (const x of [xa, xb]) for (const y of [ya, yb])
+    add('tubo', 'Tampa — Coluna de canto', x, y, ta + P, P, P, tb - ta - P);
+  for (const y of [ya, yb]) for (const x of xr)
+    add('esp', 'Espaçador da tampa (a desenhar)', x + P / 2 - ESPAC_L / 2, y, ta + P, ESPAC_L, P, tb - ta - P);
+  for (let i = n0; i < L.length; i++) L[i].tampa = true;
+  return L;
+}
+
+// Tubos de acrílico em "X" (vista de lado, plano YZ) e suportes em placas.
+// Os tubos correm ao longo de X. Os 4 tubos de canto ficam a (±a, ±b) do tubo do meio,
+// com a² + b² = (Ø + folga)², de modo que a folga canto–meio é exatamente AG.
+// Coordenadas das placas: (u, v) = (Y − D/2, Z).
+const RET = (u0, v0, u1, v1) => [[[u0, v0], [u1, v0], [u1, v1], [u0, v1]]];
+const CIRC = (u, v, r, n = 96) => [[...Array(n)].map((_, i) => [u + r * Math.cos(2 * Math.PI * i / n), v + r * Math.sin(2 * Math.PI * i / n)])];
+
+// maior raio ≤ pedido cujo arco (centro em (qu − f, qv − f), quina em (qu, qv)) fica a
+// pelo menos rb do centro do tubo de baixo (bu, bv)
+function raioFillet(pedido, qu, qv, bu, bv, rb) {
+  const ok = f => Math.hypot(qu - f - bu, qv - f - bv) - f >= rb;
+  if (pedido <= 0) return 0;
+  if (ok(pedido)) return pedido;
+  let lo = 0, hi = pedido;
+  for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (ok(m)) lo = m; else hi = m; }
+  return lo;
+}
+
+function arranjo(p) {
+  // berço: o tubo encosta no forro macio (EV), que encosta na peça impressa
+  const ro = p.AD / 2, r = ro + p.EV;
+  // o X ocupa a profundidade: os tubos de canto vão para fora (a) até o suporte, com
+  // pernas de PM, chegar a FOLGA_LAT dos tubos da estrutura. A distância vertical (b) é
+  // a mínima que mantém a folga canto–meio e a folga entre os tubos de cima/de baixo.
+  const dmin = p.AD + p.AG;
+  const yhMax = (p.D - 2 * p.T - 2 * p.P) / 2 - FOLGA_LAT;
+  const a = Math.max(dmin / 2, yhMax - p.PM - r);
+  const b = Math.max(dmin / 2, Math.sqrt(Math.max(0, dmin * dmin - a * a)));
+  const zb = p.T + BASE_SUP + r, zc = zb + b, zt = zc + b;
+  const tubos = [
+    { nome: 'baixo esquerda', u: -a, z: zb }, { nome: 'baixo direita', u: a, z: zb },
+    { nome: 'meio', u: 0, z: zc },
+    { nome: 'cima esquerda', u: -a, z: zt }, { nome: 'cima direita', u: a, z: zt },
+  ];
+  const yh = a + r + p.PM, tw = r + p.PM;
+
+  // contorno + berços → peça impressa e forro (parte do anel ro..r que cai dentro do contorno)
+  const recortar = (c, centros) => {
+    const cont = pc.union(c);  // normaliza para multipolígono (a placa cega usa o contorno)
+    const fora = centros.map(([u, v]) => CIRC(u, v, r)), dentro = centros.map(([u, v]) => CIRC(u, v, ro));
+    return { cont, peca: pc.difference(cont, ...fora),
+             eva: p.EV > 0 ? pc.difference(pc.intersection(cont, pc.union(...fora)), ...dentro) : [] };
+  };
+  // suporte inferior: base até o eixo dos tubos de baixo + torre até o eixo do tubo do meio
+  const inf = recortar(pc.union(RET(-yh, p.T, yh, zb), RET(-tw, zb, tw, zc)), [[-a, zb], [a, zb], [0, zc]]);
+  // suporte intermediário: apoia na torre e nos ombros do inferior; berços dos tubos de cima
+  // até o eixo; abraça a metade de cima do tubo do meio
+  // fillet nas quinas internas perna/corpo, limitado para não chegar a menos de EV do tubo de baixo
+  const rf = raioFillet(p.RF, a + r, zc, a, zb, r);
+  const fil = s => pc.difference(RET(s > 0 ? a + r - rf : -(a + r), zc - rf, s > 0 ? a + r : -(a + r) + rf, zc),
+                                CIRC(s * (a + r - rf), zc - rf, rf));
+  const sup = recortar(pc.union(RET(-yh, zc, yh, zt), RET(-yh, zb, -(a + r), zc), RET(a + r, zb, yh, zc),
+                                ...(rf > 0 ? [fil(1), fil(-1)] : [])), [[-a, zt], [a, zt], [0, zc]]);
+  // suporte superior: fecha a metade de cima dos tubos de cima com PM de material acima do forro
+  const top = recortar(RET(-yh, zt, yh, zt + r + p.PM), [[-a, zt], [a, zt]]);
+
+  // ao longo de X: conjunto encostado no lado esquerdo. A placa de posicionamento ocupa
+  // o vão entre os tubos da estrutura; o suporte da ponta fica MARGEM_FUNDO para dentro
+  // da borda dela. Os suportes das pontas têm placa cega (CB) do lado de fora.
+  const xp0 = p.T + p.P, xp1 = p.W - p.T - p.P;
+  const xs0 = xp0 + MARGEM_FUNDO;
+  const x0 = xs0 + p.CB, x1 = x0 + p.AL, xs1 = x1 + p.CB;
+  const n = Math.max(2, Math.round(p.SN));
+  const c0 = xs0 + p.SE / 2, c1 = xs1 - p.SE / 2;
+  const est = [];
+  for (let i = 0; i < n; i++) {
+    const c = c0 + (c1 - c0) * i / (n - 1);
+    est.push({ xa: c - p.SE / 2, xb: c + p.SE / 2, cega: i === 0 ? 'esq' : i === n - 1 ? 'dir' : null });
+  }
+
+  // placa de posicionamento: vão interno da estrutura, furos passantes nos pés do suporte inferior
+  const fundo = pc.difference(RET(xp0, p.T + p.P, xp1, p.D - p.T - p.P),
+    ...est.map(e => RET(e.xa - FOLGA_ENC, p.D / 2 - yh - FOLGA_ENC, e.xb + FOLGA_ENC, p.D / 2 + yh + FOLGA_ENC)));
+
+  // pinos de encaixe entre níveis (u, v na face de contato), no meio da seção de PM:
+  // inferior→intermediário no topo da torre e nos ombros; intermediário→superior nas
+  // bordas de fora e, se couber, no centro entre os dois berços de cima
+  const um = p.PM / 2;
+  const pinos = [
+    ...[-1, 1].flatMap(s => [{ k: 'inf', u: s * (r + um), v: zc }, { k: 'inf', u: s * (a + r + um), v: zb }]),
+    ...[-1, 1].map(s => ({ k: 'sup', u: s * (a + r + um), v: zt })),
+    ...(a - r >= p.PD ? [{ k: 'sup', u: 0, v: zt }] : []),
+  ];
+
+  return { a, b, r, ro, zb, zc, zt, x0, x1, xs1, xp1, tubos, inf, sup, top, est, yh, fundo, rf, ztop: zt + r + p.PM, pinos };
+}
+
+const areaAnel = ring => { let s = 0; for (let i = 0; i < ring.length; i++) { const [x1, y1] = ring[i], [x2, y2] = ring[(i + 1) % ring.length]; s += x1 * y2 - x2 * y1; } return Math.abs(s) / 2; };
+const areaMulti = mp => mp.reduce((s, pol) => s + areaAnel(pol[0]) - pol.slice(1).reduce((h, r) => h + areaAnel(r), 0), 0);
+const caixaMulti = mp => { let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9; for (const pol of mp) for (const [u, v] of pol[0]) { u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v); } return { du: u1 - u0, dv: v1 - v0, v0, v1 }; };
+
+// ------------------------------------------------------------ cena
+const el = document.getElementById('vista');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.localClippingEnabled = true;
+const planoCorte = new THREE.Plane(new THREE.Vector3(1, 0, 0), -200);
+el.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x13151a);
+const camera = new THREE.PerspectiveCamera(30, 4 / 3, 10, 50000);
+camera.up.set(0, 0, 1);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.listenToKeyEvents(window);  // setas do teclado deslocam a vista
+controls.keyPanSpeed = 25;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x404040, 1.6));
+const sol = new THREE.DirectionalLight(0xffffff, 1.6);
+sol.position.set(-1, -2, 3);
+scene.add(sol);
+
+const grupos = { mdf: new THREE.Group(), tubo: new THREE.Group(), con: new THREE.Group(),
+                 acr: new THREE.Group(), inf: new THREE.Group(), sup: new THREE.Group(), top: new THREE.Group(), fundo: new THREE.Group(), pino: new THREE.Group() };
+const raizCaixa = new THREE.Group(), raizTampa = new THREE.Group();
+scene.add(raizCaixa, raizTampa);
+Object.values(grupos).forEach(g => raizCaixa.add(g));
+const gTampa = { mdf: new THREE.Group(), tubo: new THREE.Group(), con: new THREE.Group(), esp: new THREE.Group(), copo: new THREE.Group(), anel: new THREE.Group(), paraf: new THREE.Group(), acrV: new THREE.Group(), bolas: new THREE.Group() };
+Object.values(gTampa).forEach(g => raizTampa.add(g));
+let objFrente = [];
+let posTampa = 'local';
+try { posTampa = localStorage.getItem(CHAVE + '-tampa') || 'local'; } catch (e) {}
+
+const matMdf = new THREE.MeshStandardMaterial({ color: COR.mdf, roughness: 0.9, transparent: true, opacity: 0.35, depthWrite: false });
+const matTubo = new THREE.MeshStandardMaterial({ color: COR.tubo, roughness: 0.35, metalness: 0.6, side: THREE.DoubleSide });
+const matCon = new THREE.MeshStandardMaterial({ color: COR.con, roughness: 0.6, side: THREE.DoubleSide });
+const matAresta = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 });
+const matsBola = CORES_BOLAS.map(([nome, cor]) => { const m = new THREE.MeshStandardMaterial({ color: cor, roughness: 0.35, side: THREE.DoubleSide }); m.name = 'bola_' + nome; return m; });
+const matAcr = new THREE.MeshStandardMaterial({ color: 0xcfe8ff, roughness: 0.05, metalness: 0, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
+const matInf = new THREE.MeshStandardMaterial({ color: 0x5b8fd6, roughness: 0.7, side: THREE.DoubleSide });
+const matSup = new THREE.MeshStandardMaterial({ color: 0x59b37a, roughness: 0.7, side: THREE.DoubleSide });
+const matTop = new THREE.MeshStandardMaterial({ color: 0xc98bd9, roughness: 0.7, side: THREE.DoubleSide });
+const matEva = new THREE.MeshStandardMaterial({ color: 0x2b2b2e, roughness: 1, side: THREE.DoubleSide });
+const matEsp = new THREE.MeshStandardMaterial({ color: 0xe8d36a, roughness: 0.6, transparent: true, opacity: 0.7 });
+const matFundo = new THREE.MeshStandardMaterial({ color: 0xa8865c, roughness: 0.9, side: THREE.DoubleSide });
+const matPino = new THREE.MeshStandardMaterial({ color: 0x9a9da3, roughness: 0.4, metalness: 0.5, side: THREE.DoubleSide });
+const matCopo = new THREE.MeshStandardMaterial({ color: 0xf2a65a, roughness: 0.6, side: THREE.DoubleSide, transparent: true, opacity: 0.55, depthWrite: false });
+const matArestaCopo = new THREE.LineBasicMaterial({ color: 0x3a2410, transparent: true, opacity: 0.8 });
+const matAnel = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.5, side: THREE.DoubleSide, transparent: true, opacity: 0.5, depthWrite: false });
+const NIVEIS = [['inf', matInf], ['sup', matSup], ['top', matTop]];
+// placa: forma (u, v) = (Y − D/2, Z) extrudada ao longo de X
+const BASE_PLACA = new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0));
+
+function geoPlaca(mp, esp) {
+  const formas = mp.map(pol => {
+    const f = new THREE.Shape(pol[0].map(([u, v]) => new THREE.Vector2(u, v)));
+    f.holes = pol.slice(1).map(h => new THREE.Path(h.map(([u, v]) => new THREE.Vector2(u, v))));
+    return f;
+  });
+  return new THREE.ExtrudeGeometry(formas, { depth: esp, bevelEnabled: false, curveSegments: 1 });
+}
+
+function placaMesh(mp, mt, xa, esp, y0) {
+  const g = geoPlaca(mp, esp), m = new THREE.Mesh(g, mt);
+  m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 20), matAresta));
+  m.matrixAutoUpdate = false;
+  m.matrix.copy(BASE_PLACA).setPosition(xa, y0, 0);
+  return m;
+}
+
+// uma estação de um nível: parte com berços (forrada) + placa cega do lado de fora nas pontas
+function meshesEstacao(A, k, mat, e, y0) {
+  const cb = e.cega ? par.CB : 0;
+  const xa = e.cega === 'esq' ? e.xa + cb : e.xa, larg = par.SE - cb;
+  const L = [placaMesh(A[k].peca, mat, xa, larg, y0)];
+  if (A[k].eva.length) L.push(placaMesh(A[k].eva, matEva, xa, larg, y0));
+  if (e.cega) L.push(placaMesh(A[k].cont, mat, e.cega === 'esq' ? e.xa : e.xb - cb, cb, y0));
+  return L;
+}
+
+// pino vertical no meio da parte com berços, centrado na face de contato
+function meshPino(e, q, y0) {
+  const cb = e.cega ? par.CB : 0;
+  const xm = (e.xa + e.xb + (e.cega === 'esq' ? cb : e.cega === 'dir' ? -cb : 0)) / 2;
+  const g = new THREE.CylinderGeometry(par.PD / 2, par.PD / 2, par.PL, 24);
+  g.rotateX(Math.PI / 2);
+  const m = new THREE.Mesh(g, matPino);
+  m.position.set(xm, y0 + q.u, q.v);
+  return m;
+}
+
+// furos do tampo da tampa: um por tubo, em linha no meio da profundidade, passo FP
+function furosTampa(p) {
+  return [...Array(N_COPOS)].map((_, i) => ({ x: p.W / 2 + (i - (N_COPOS - 1) / 2) * p.FP, y: p.D / 2 }));
+}
+
+// ------------------------------------------------------------ bolinhas
+
+// gerador pseudoaleatório com semente (mulberry32): a mesma semente refaz a mesma cena
+function rng(semente) {
+  let a = semente >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Preenchimento por simulação baseada em posições: as bolinhas nascem em camadas soltas
+// (6 por camada, posição aleatória), descem com gravidade decrescente e têm as
+// sobreposições resolvidas a cada passo (bolinha × bolinha, parede do tubo, fundo); no
+// fim, só acomodação. Duas bolinhas sobrepostas na mesma altura recebem um empurrão para
+// cima, senão a camada do fundo trava espremida. Coordenadas relativas ao eixo do tubo,
+// z = 0 no fundo interno do copo. Sobreposição residual medida: ≤ 0,2 mm.
+function simularTubo(n, rTubo, rb, sortear) {
+  const R = rTubo - rb, P = [];
+  for (let i = 0; i < n; i++) {
+    const a = 2 * Math.PI * sortear(), d = R * Math.sqrt(sortear());
+    P.push([d * Math.cos(a), d * Math.sin(a), rb + Math.floor(i / 6) * 2 * rb + sortear() * rb]);
+  }
+  const dmin = 2 * rb, dmin2 = dmin * dmin;
+  const resolver = () => {
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const p = P[i], q = P[j];
+      if (Math.abs(q[2] - p[2]) < 0.5 && (q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2 < dmin2) q[2] += 1;
+      const dx = q[0] - p[0], dy = q[1] - p[1], dz = q[2] - p[2], d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 >= dmin2 || d2 === 0) continue;
+      const d = Math.sqrt(d2), k = (dmin - d) / d / 2;
+      p[0] -= dx * k; p[1] -= dy * k; p[2] -= dz * k;
+      q[0] += dx * k; q[1] += dy * k; q[2] += dz * k;
+    }
+    for (const p of P) {
+      const r = Math.hypot(p[0], p[1]);
+      if (r > R) { p[0] *= R / r; p[1] *= R / r; }
+      if (p[2] < rb) p[2] = rb;
+    }
+  };
+  const IT_G = 500, IT_F = 1500;
+  for (let it = 0; it < IT_G; it++) {
+    const g = 6 * (1 - it / IT_G);
+    for (const p of P) p[2] -= g;
+    for (let k = 0; k < 4; k++) resolver();
+  }
+  for (let it = 0; it < IT_F; it++) resolver();
+  return P;
+}
+
+// cena das bolinhas: quantidade e cores por tubo + posições simuladas (com cache)
+let cacheBolas = { chave: '', dados: null };
+function bolinhas(p) {
+  const chave = [p.BS, p.BD, p.BN, p.BV, p.AD, p.AE].join('|');
+  if (cacheBolas.chave === chave) return cacheBolas.dados;
+  const sortear = rng(p.BS * 7919 + 13), rb = p.BD / 2, rTubo = p.AD / 2 - p.AE;
+  // cor fixa por tubo (competência t). Os quatro sorteios do antigo embaralhamento das cores
+  // continuam sendo consumidos para a mesma semente manter quantidades e posições
+  const ordem = CORES_BOLAS.map((_, k) => k);
+  for (let i = ordem.length - 1; i > 0; i--) sortear();
+  const dados = [...Array(N_COPOS)].map((_, t) => {
+    const n = Math.max(0, Math.round(p.BN + (2 * sortear() - 1) * p.BV));
+    const cor = ordem[t % ordem.length];
+    const cores = Array(n).fill(cor);
+    const pos = simularTubo(n, rTubo, rb, sortear);
+    let sobre = 0;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++)
+      sobre = Math.max(sobre, 2 * rb - Math.hypot(pos[i][0] - pos[j][0], pos[i][1] - pos[j][1], pos[i][2] - pos[j][2]));
+    const altura = n ? Math.max(...pos.map(q => q[2])) + rb : 0;
+    return { n, cor, cores, pos, altura, sobre };
+  });
+  cacheBolas = { chave, dados };
+  return dados;
+}
+
+// montada: cota (nas coordenadas da tampa) da base do tubo de pé = fundo interno do copo
+function baseTuboMontado(C) { return par.LH - C.zBoca + COPO_FUNDO; }
+
+// parafusos passantes de um copo: no meio da aba, a 45° dos eixos (longe do recorte)
+const FOLGA_PARAF = 0.5;  // furo passante = Ø do parafuso + folga
+function parafusosCopo(p, c) {
+  const rp = p.FD / 2 + p.CA / 2;
+  return [...Array(Math.max(0, p.NF))].map((_, i) => {
+    const a = Math.PI / 4 + 2 * Math.PI * i / p.NF;
+    return { x: c.x + rp * Math.cos(a), y: c.y + rp * Math.sin(a) };
+  });
+}
+
+// copo, em coordenadas próprias (z = 0 no fundo, de pé como é impresso). De baixo para
+// cima: corpo Ø furo, cone de 45° até a aba (sem suporte), face da aba encostada por
+// baixo no tampo, gargalo de altura T dentro do furo, boca rente ao tampo.
+function perfilCopo(p) {
+  const Ro = p.FD / 2, ri = (p.AD + p.CF) / 2, Ra = Ro + p.CA;
+  const zBoca = COPO_FUNDO + p.CI, zAba = zBoca - p.T, zCone = zAba - p.CA;
+  return { Ro, ri, Ra, zBoca, zAba, zCone,
+    pts: [[0, 0], [Ro, 0], [Ro, zCone], [Ra, zAba], [Ro, zAba], [Ro, zBoca], [ri, zBoca], [ri, COPO_FUNDO], [0, COPO_FUNDO]] };
+}
+
+// recorte da aba dos copos das pontas por um plano vertical paralelo à lateral, a
+// FOLGA_ABA da face dos tubos da tampa. Devolve, para cada furo, a distância do eixo ao
+// plano (null = aba inteira) e o lado (−1 = esquerda, +1 = direita).
+function cortesAba(p, C) {
+  const lim0 = p.T + p.P + FOLGA_ABA, lim1 = p.W - lim0;
+  return furosTampa(p).map(c => {
+    if (c.x - C.Ra < lim0) return { d: c.x - lim0, lado: -1 };
+    if (c.x + C.Ra > lim1) return { d: lim1 - c.x, lado: 1 };
+    return null;
+  });
+}
+
+// seção da aba no plano de corte (u ao longo do plano, z), para tampar o recorte:
+// em cada raio entre Ro e Ra o material vai do cone até a face da aba
+function secaoCorte(C, d) {
+  const um = Math.sqrt(Math.max(0, C.Ra * C.Ra - d * d)), n = 48, baixo = [], cima = [];
+  for (let i = 0; i <= n; i++) {
+    const u = -um + 2 * um * i / n, r = Math.hypot(d, u);
+    baixo.push([u, C.zCone + Math.max(0, r - C.Ro)]);
+    cima.push([u, C.zAba]);
+  }
+  return [...baixo, ...cima.reverse()];
+}
+
+// volume da aba que sai no recorte (mm³), por integração numérica na planta
+function volCorte(C, d) {
+  let v = 0;
+  const h = 0.5;
+  for (let x = d; x < C.Ra; x += h) for (let y = -C.Ra; y < C.Ra; y += h) {
+    const r = Math.hypot(x + h / 2, y + h / 2);
+    if (r > C.Ro && r < C.Ra) v += (C.zAba - C.zCone - (r - C.Ro)) * h * h;
+  }
+  return v;
+}
+
+// sólido de revolução de um perfil (r, z): Lathe em torno de Y e depois de pé (Y -> Z)
+function geoRevol(pts) {
+  const g = new THREE.LatheGeometry(pts.map(([r, z]) => new THREE.Vector2(r, z)), 96);
+  g.rotateX(Math.PI / 2);
+  return g;
+}
+
+// volume de revolução (mm³) de um perfil fechado (r, z): 2π ∬ r dA
+function volRevol(pts) {
+  let s = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const [r1, z1] = pts[i], [r2, z2] = pts[(i + 1) % pts.length];
+    s += (r1 + r2) * (r1 * z2 - r2 * z1);
+  }
+  return 2 * Math.PI * Math.abs(s / 6);
+}
+
+function geoTuboAcr(ro, ri, L) {
+  // perfil do anel girado em torno de Y (Lathe) e depois deitado ao longo de X
+  const g = new THREE.LatheGeometry([new THREE.Vector2(ri, 0), new THREE.Vector2(ro, 0), new THREE.Vector2(ro, L), new THREE.Vector2(ri, L), new THREE.Vector2(ri, 0)], 96);
+  g.rotateZ(-Math.PI / 2);
+  return g;
+}
+
+function limpar(g) {
+  while (g.children.length) {
+    const o = g.children.pop();
+    o.traverse(c => { if (c.geometry) c.geometry.dispose(); });
+  }
+}
+
+function montar() {
+  Object.values(grupos).forEach(limpar);
+  Object.values(gTampa).forEach(limpar);
+  objFrente = [];
+  for (const q of pecas(par)) {
+    const mat = q.grupo === 'mdf' ? matMdf : q.grupo === 'tubo' ? matTubo : q.grupo === 'esp' ? matEsp : matCon;
+    let geo, m;
+    if (q.nome === 'Tampa — Topo' && par.FD > 0) {
+      // tampo com os furos dos copos
+      const f = new THREE.Shape([new THREE.Vector2(q.x0, q.y0), new THREE.Vector2(q.x0 + q.dx, q.y0),
+                                 new THREE.Vector2(q.x0 + q.dx, q.y0 + q.dy), new THREE.Vector2(q.x0, q.y0 + q.dy)]);
+      f.holes = furosTampa(par).flatMap(c => [
+        new THREE.Path().absarc(c.x, c.y, par.FD / 2, 0, 2 * Math.PI, true),
+        ...(par.CI > 0 && par.CA > 0 ? parafusosCopo(par, c).map(b => new THREE.Path().absarc(b.x, b.y, (par.FF + FOLGA_PARAF) / 2, 0, 2 * Math.PI, true)) : []),
+      ]);
+      geo = new THREE.ExtrudeGeometry(f, { depth: q.dz, bevelEnabled: false, curveSegments: 64 });
+      m = new THREE.Mesh(geo, mat);
+      m.position.z = q.z0;
+    } else {
+      geo = new THREE.BoxGeometry(q.dx, q.dy, q.dz);
+      m = new THREE.Mesh(geo, mat);
+      m.position.set(q.x0 + q.dx / 2, q.y0 + q.dy / 2, q.z0 + q.dz / 2);
+    }
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 20), matAresta));
+    if (q.grupo === 'mdf') m.renderOrder = 1;
+    const gk = q.grupo === 'mdf' || q.grupo === 'tubo' || q.grupo === 'esp' ? q.grupo : 'con';
+    (q.tampa ? gTampa : grupos)[gk].add(m);
+    if (/Frente$/.test(q.nome)) objFrente.push(m);
+  }
+
+  const A = arranjo(par);
+  const gAcr = geoTuboAcr(A.ro, A.ro - par.AE, par.AL);
+  for (const t of A.tubos) {
+    const m = new THREE.Mesh(gAcr, matAcr);
+    m.position.set(A.x0, par.D / 2 + t.u, t.z);
+    m.renderOrder = 2;
+    grupos.acr.add(m);
+  }
+  for (const [k, mat] of NIVEIS) for (const e of A.est)
+    for (const m of meshesEstacao(A, k, mat, e, par.D / 2)) grupos[k].add(m);
+  for (const e of A.est) for (const q of A.pinos) grupos.pino.add(meshPino(e, q, par.D / 2));
+  // copos nos furos da tampa (coordenadas da tampa: topo do copo rente ao tampo)
+  if (par.FD > 0 && par.CI > 0) {
+    const C = perfilCopo(par);
+    // montada: tubo de pé, apoiado no fundo interno do copo
+    const gV = new THREE.LatheGeometry([[A.ro - par.AE, 0], [A.ro, 0], [A.ro, par.AL], [A.ro - par.AE, par.AL], [A.ro - par.AE, 0]]
+      .map(([r, z]) => new THREE.Vector2(r, z)), 96);
+    gV.rotateX(Math.PI / 2);
+    for (const c of furosTampa(par)) {
+      const m = new THREE.Mesh(gV, matAcr);
+      m.position.set(c.x, c.y, baseTuboMontado(C));
+      m.renderOrder = 2;
+      m.name = 'Tubo_acrilico_' + (gTampa.acrV.children.length + 1);
+      gTampa.acrV.add(m);
+    }
+    // bolinhas dentro dos tubos de pé (uma geometria para todas)
+    if (par.BD > 0) {
+      const gB = new THREE.SphereGeometry(par.BD / 2, 32, 16), z0 = baseTuboMontado(C);
+      bolinhas(par).forEach((t, i) => {
+        const c = furosTampa(par)[i];
+        t.pos.forEach(([x, y, z], j) => {
+          const b = new THREE.Mesh(gB, matsBola[t.cores[j]]);
+          b.position.set(c.x + x, c.y + y, z0 + z);
+          b.name = `Bola_T${i + 1}_${String(j + 1).padStart(3, '0')}`;
+          gTampa.bolas.add(b);
+        });
+      });
+    }
+    const gC = geoRevol(C.pts);
+    // anel de acabamento: coroa com o furo do tubo e os furos passantes dos parafusos
+    let gA = null;
+    if (par.AR > 0) {
+      const fa = new THREE.Shape().absarc(0, 0, C.Ra, 0, 2 * Math.PI, false);
+      fa.holes = [new THREE.Path().absarc(0, 0, C.ri, 0, 2 * Math.PI, true),
+        ...parafusosCopo(par, { x: 0, y: 0 }).map(b => new THREE.Path().absarc(b.x, b.y, (par.FF + FOLGA_PARAF) / 2, 0, 2 * Math.PI, true))];
+      gA = new THREE.ExtrudeGeometry(fa, { depth: par.AR, bevelEnabled: false, curveSegments: 48 });
+    }
+    // parafuso: cabeça sobre o anel, corpo atravessando anel + MDF + aba (no meio da aba a
+    // espessura é CA/2), porca por baixo da aba
+    const cab = 0.65 * par.FF, por = 0.8 * par.FF;
+    const zCab = par.LH + par.AR, zAbaInf = par.LH - par.T - par.CA / 2;
+    const compP = zCab - (zAbaInf - por);
+    // arestas: só os cantos do perfil (as facetas da revolução ficam abaixo do ângulo limite)
+    const eC = new THREE.EdgesGeometry(gC, 25), eA = gA ? new THREE.EdgesGeometry(gA, 25) : null;
+    const cil = (r, h, n = 16) => { const g = new THREE.CylinderGeometry(r, r, h, n); g.rotateX(Math.PI / 2); return g; };
+    const gP = cil(par.FF / 2, compP), gCab = cil(0.9 * par.FF, cab), gPor = cil(par.FF, por, 6);
+    const cortes = cortesAba(par, C);
+    furosTampa(par).forEach((c, i) => {
+      const k = cortes[i];
+      let mat = matCopo;
+      if (k) {
+        // plano em X (mundo): a tampa só se move em Z, então o plano vale em qualquer posição
+        const xPlano = c.x + k.lado * k.d;
+        mat = matCopo.clone();
+        mat.clippingPlanes = [new THREE.Plane(new THREE.Vector3(-k.lado, 0, 0), k.lado * xPlano)];
+        // tampa da face recortada
+        const sec = secaoCorte(C, k.d);
+        const gS = new THREE.ShapeGeometry(new THREE.Shape(sec.map(([u, z]) => new THREE.Vector2(u, z))));
+        const ms = new THREE.Mesh(gS, matCopo);
+        ms.matrixAutoUpdate = false;
+        ms.matrix.makeBasis(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0))
+          .setPosition(xPlano, c.y, par.LH - C.zBoca);
+        gTampa.copo.add(ms);
+      }
+      const m = new THREE.Mesh(gC, mat);
+      m.add(new THREE.LineSegments(eC, k ? matArestaCopo.clone() : matArestaCopo));
+      if (k) m.children[0].material.clippingPlanes = mat.clippingPlanes;
+      m.position.set(c.x, c.y, par.LH - C.zBoca);
+      gTampa.copo.add(m);
+      if (gA) {
+        const a = new THREE.Mesh(gA, matAnel);
+        a.add(new THREE.LineSegments(eA, matArestaCopo));
+        a.position.set(c.x, c.y, par.LH);
+        gTampa.anel.add(a);
+      }
+      for (const b of parafusosCopo(par, c)) {
+        for (const [g, z] of [[gP, zCab - compP / 2], [gCab, zCab + cab / 2], [gPor, zAbaInf - por / 2]]) {
+          const f = new THREE.Mesh(g, matPino);
+          f.position.set(b.x, b.y, z);
+          gTampa.paraf.add(f);
+        }
+      }
+    });
+  }
+  // placa de posicionamento sobre a base (forma em XY, extrudada em Z)
+  if (par.PF > 0) {
+    const formas = A.fundo.map(pol => {
+      const f = new THREE.Shape(pol[0].map(([x, y]) => new THREE.Vector2(x, y)));
+      f.holes = pol.slice(1).map(h => new THREE.Path(h.map(([x, y]) => new THREE.Vector2(x, y))));
+      return f;
+    });
+    const g = new THREE.ExtrudeGeometry(formas, { depth: par.PF, bevelEnabled: false, curveSegments: 1 });
+    const m = new THREE.Mesh(g, matFundo);
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g), matAresta));
+    m.position.z = par.T;
+    grupos.fundo.add(m);
+  }
+  visibilidade();
+  tabelas();
+  montarPecas(A);
+}
+
+function visibilidade() {
+  grupos.mdf.visible = cMdf.checked;
+  grupos.tubo.visible = cTubos.checked;
+  grupos.con.visible = cCon.checked;
+  const montada = cMontada.checked;
+  grupos.acr.visible = cAcr.checked && !montada;
+  gTampa.acrV.visible = cAcr.checked && montada;
+  gTampa.bolas.visible = cBolas.checked && montada;
+  sTampa.disabled = montada;
+  grupos.inf.visible = cInf.checked;
+  grupos.sup.visible = cSup.checked;
+  grupos.top.visible = cTop.checked;
+  grupos.fundo.visible = cFundo.checked;
+  grupos.pino.visible = cPino.checked;
+  gTampa.copo.visible = cCopo.checked;
+  gTampa.anel.visible = cAnel.checked;
+  gTampa.paraf.visible = cCopo.checked || cAnel.checked;
+  for (const m of objFrente) m.visible = cFrente.checked;
+  raizTampa.visible = cTampa.checked;
+  gTampa.mdf.visible = cMdf.checked;
+  gTampa.tubo.visible = cTubos.checked;
+  gTampa.con.visible = gTampa.esp.visible = cCon.checked;
+  posicionarTampa();
+  for (const [g, r] of [[gTampa.copo, rCopo], [gTampa.anel, rAnel]]) {
+    const op = +r.value;
+    g.traverse(o => {
+      if (!o.isMesh || o.userData.capa) return;
+      o.material.opacity = op;
+      o.material.transparent = op < 1;
+      o.material.depthWrite = op >= 1;
+      o.material.needsUpdate = true;
+    });
+  }
+  // montada: MDF pintado e opaco; senão, cor natural com a opacidade do slider
+  matMdf.color.set(montada ? corMontada.value : COR.mdf);
+  matMdf.opacity = montada ? 1 : +rAlpha.value;
+  matMdf.transparent = matMdf.opacity < 1;
+  matMdf.depthWrite = !matMdf.transparent;
+  matMdf.needsUpdate = true;
+}
+
+// posição da tampa: no local (fechando a caixa), embaixo (caixa apoiada sobre a tampa)
+// ou suspensa POS_TAMPA_ALTA acima da caixa
+function posicionarTampa() {
+  const { H, R, LH } = par;
+  const pos = cMontada.checked ? 'local' : posTampa;
+  raizCaixa.position.z = pos === 'baixo' ? R + LH : 0;
+  raizTampa.position.z = pos === 'baixo' ? R : pos === 'alta' ? H + POS_TAMPA_ALTA : H;
+}
+
+// ------------------------------------------------------------ seções do corte
+// Cada peça cortada pelo plano ganha a seção em cor sólida com contorno, desenhada no
+// próprio grupo da peça (acompanha visibilidade e posição da tampa). Coordenadas da
+// seção: (u, v) = (Y, Z) do grupo, levadas ao plano pela mesma base das placas.
+let capas = [];
+const matsCapa = new Map();
+const matContorno = new THREE.LineBasicMaterial({ color: 0x000000 });
+function matCapa(cor) {
+  if (!matsCapa.has(cor)) matsCapa.set(cor, new THREE.MeshStandardMaterial({ color: cor, roughness: 0.85, side: THREE.DoubleSide }));
+  return matsCapa.get(cor);
+}
+
+function addCapa(grupo, mp, cor, xc, y0, z0) {
+  if (!mp || !mp.length) return;
+  const formas = mp.map(pol => {
+    const f = new THREE.Shape(pol[0].map(([u, v]) => new THREE.Vector2(u, v)));
+    f.holes = pol.slice(1).map(h => new THREE.Path(h.map(([u, v]) => new THREE.Vector2(u, v))));
+    return f;
+  });
+  const g = new THREE.ShapeGeometry(formas);
+  const m = new THREE.Mesh(g, matCapa(cor));
+  m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g), matContorno));
+  m.userData.capa = true;
+  m.matrixAutoUpdate = false;
+  m.matrix.copy(BASE_PLACA).setPosition(xc, y0, z0);
+  grupo.add(m);
+  capas.push(m);
+}
+
+// seção de um sólido de revolução (perfil (r, z) fechado) por um plano a distância d do
+// eixo: cada ponto (r, z) com r ≥ d vai para u = ±√(r² − d²). As arestas do perfil são
+// subdivididas antes, porque a transformação curva as retas.
+function secaoRevol(pts, d) {
+  const meio = pc.intersection([pts], RET(d, -1e5, 1e5, 1e5));
+  const partes = [];
+  for (const pol of meio) {
+    const aneis = pol.map(anel => {
+      const dens = [];
+      for (let i = 0; i < anel.length - 1; i++) {
+        const [r1, z1] = anel[i], [r2, z2] = anel[i + 1];
+        const n = Math.max(1, Math.ceil(Math.hypot(r2 - r1, z2 - z1) / 2));
+        for (let j = 0; j < n; j++) dens.push([r1 + (r2 - r1) * j / n, z1 + (z2 - z1) * j / n]);
+      }
+      return dens.map(([r, z]) => [Math.sqrt(Math.max(0, r * r - d * d)), z]);
+    });
+    partes.push(aneis, aneis.map(a => a.map(([u, z]) => [-u, z]).reverse()));
+  }
+  return partes.length ? pc.union(...partes) : [];
+}
+
+function atualizarCapas() {
+  for (const m of capas) { if (m.parent) m.parent.remove(m); m.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+  capas = [];
+  if (!cCorte.checked) return;
+  const lado = +sCorte.value, x = +rCorte.value, xc = x + lado * 0.2;  // um pouco para o lado que fica
+  const dentro = (a, b) => x > a && x < b;
+  const montada = cMontada.checked;
+  const COR_GRUPO = { mdf: montada ? new THREE.Color(corMontada.value).getHex() : COR.mdf, tubo: COR.tubo, con: COR.con, esp: 0xe8d36a };
+
+  // chapas, tubos, conectores e espaçadores (caixas alinhadas aos eixos)
+  for (const q of pecas(par)) {
+    if (!dentro(q.x0, q.x0 + q.dx)) continue;
+    const gk = q.grupo === 'mdf' || q.grupo === 'tubo' || q.grupo === 'esp' ? q.grupo : 'con';
+    let mp = pc.union(RET(q.y0, q.z0, q.y0 + q.dy, q.z0 + q.dz));
+    if (q.nome === 'Tampa — Topo' && par.FD > 0) {
+      const furos = furosTampa(par).filter(c => Math.abs(x - c.x) < par.FD / 2).map(c => {
+        const h = Math.sqrt((par.FD / 2) ** 2 - (x - c.x) ** 2);
+        return RET(c.y - h, q.z0 - 1, c.y + h, q.z0 + q.dz + 1);
+      });
+      if (furos.length) mp = pc.difference(mp, ...furos);
+    }
+    addCapa((q.tampa ? gTampa : grupos)[gk], mp, COR_GRUPO[gk], xc, 0, 0);
+  }
+
+  const A = arranjo(par);
+  // suportes: na faixa da placa cega a seção é o contorno cheio; no resto, peça + forro
+  const COR_NIVEL = { inf: 0x5b8fd6, sup: 0x59b37a, top: 0xc98bd9 };
+  for (const e of A.est) {
+    if (!dentro(e.xa, e.xb)) continue;
+    const naCega = e.cega === 'esq' ? x < e.xa + par.CB : e.cega === 'dir' ? x > e.xb - par.CB : false;
+    for (const k of ['inf', 'sup', 'top']) {
+      if (naCega) addCapa(grupos[k], A[k].cont, COR_NIVEL[k], xc, par.D / 2, 0);
+      else {
+        addCapa(grupos[k], A[k].peca, COR_NIVEL[k], xc, par.D / 2, 0);
+        addCapa(grupos[k], A[k].eva, 0x2b2b2e, xc, par.D / 2, 0);
+      }
+    }
+  }
+
+  // tubos de pé (montada): o plano corta as paredes em faixas verticais
+  if (montada && par.FD > 0 && par.CI > 0) {
+    const z0 = baseTuboMontado(perfilCopo(par)), ri = A.ro - par.AE;
+    for (const c of furosTampa(par)) {
+      const d = Math.abs(x - c.x);
+      if (d >= A.ro) continue;
+      const he = Math.sqrt(A.ro * A.ro - d * d), hi = d < ri ? Math.sqrt(ri * ri - d * d) : 0;
+      const mp = hi > 0 ? pc.union(RET(c.y - he, z0, c.y - hi, z0 + par.AL), RET(c.y + hi, z0, c.y + he, z0 + par.AL))
+                        : pc.union(RET(c.y - he, z0, c.y + he, z0 + par.AL));
+      addCapa(gTampa.acrV, mp, 0xbcd9f2, xc, 0, 0);
+    }
+  }
+  // tubos de acrílico: coroa
+  if (!montada && dentro(A.x0, A.x0 + par.AL))
+    for (const t of A.tubos)
+      addCapa(grupos.acr, pc.difference(CIRC(t.u, t.z, A.ro), CIRC(t.u, t.z, A.ro - par.AE)), 0xbcd9f2, xc, par.D / 2, 0);
+
+  // placa de posicionamento: faixas em Y onde a placa existe nesse X
+  if (par.PF > 0) {
+    const fatias = pc.intersection(A.fundo, RET(x - 0.05, -1e5, x + 0.05, 1e5));
+    for (const pol of fatias) {
+      const ys = pol[0].map(([, y]) => y);
+      addCapa(grupos.fundo, pc.union(RET(Math.min(...ys), par.T, Math.max(...ys), par.T + par.PF)), 0xa8865c, xc, 0, 0);
+    }
+  }
+
+  // copos e anéis: seção do sólido de revolução (copos das pontas sem a aba recortada)
+  if (par.FD > 0 && par.CI > 0) {
+    const C = perfilCopo(par), cortes = cortesAba(par, C);
+    const perfilAnel = [[C.ri, 0], [C.Ra, 0], [C.Ra, par.AR], [C.ri, par.AR]];
+    furosTampa(par).forEach((c, i) => {
+      const d = Math.abs(x - c.x), k = cortes[i];
+      if (d >= C.Ra) return;
+      if (!(k && Math.sign(x - c.x) === k.lado && d > k.d))
+        addCapa(gTampa.copo, secaoRevol(C.pts, d), 0xd9853a, xc, c.y, par.LH - C.zBoca);
+      if (par.AR > 0) addCapa(gTampa.anel, secaoRevol(perfilAnel, d), 0xcfcfcf, xc, c.y, par.LH);
+    });
+  }
+}
+
+// plano de corte perpendicular a X: mantém o lado escolhido (sCorte = +1 direita, −1 esquerda)
+function aplicarCorte(origem) {
+  const W = par.W;
+  rCorte.max = W;
+  let x = origem === 'n' ? +nCorte.value : +rCorte.value;
+  x = Math.min(W, Math.max(0, Number.isFinite(x) ? x : 0));
+  rCorte.value = nCorte.value = x;
+  const lado = +sCorte.value;
+  planoCorte.normal.set(lado, 0, 0);
+  planoCorte.constant = -lado * x;
+  renderer.clippingPlanes = cCorte.checked ? [planoCorte] : [];
+  atualizarCapas();
+}
+
+function vista(v) {
+  const { W, D } = par;
+  // altura total do conjunto: com a tampa, ou até o topo dos tubos de pé na montada
+  const Ht = cMontada.checked ? par.H + baseTuboMontado(perfilCopo(par)) + par.AL : par.H + par.LH;
+  if (v === 'corte') {
+    // olhando o corte de frente, do lado que foi removido
+    const lado = +sCorte.value, x = +rCorte.value;
+    const c = new THREE.Vector3(x, D / 2, Ht / 2);
+    const d = new THREE.Vector3(-lado, -0.25, 0.2).normalize().multiplyScalar(Math.max(Ht, D) * 3.2);
+    camera.position.copy(c).add(d);
+    controls.target.copy(c);
+    controls.update();
+    return;
+  }
+  const c = new THREE.Vector3(W / 2, D / 2, Ht / 2);
+  const r = Math.max(W, Ht, D) * 2.2;
+  const dir = { iso: [-0.75, -1, 0.65], frente: [0, -1, 0.0001], lado: [1, 0, 0.0001], topo: [0, -0.0001, 1] }[v];
+  const d = new THREE.Vector3(...dir).normalize().multiplyScalar(r);
+  camera.position.copy(c).add(d);
+  controls.target.copy(c);
+  controls.update();
+}
+
+function redimensionar() {
+  const w = el.clientWidth, h = el.clientHeight;
+  renderer.setSize(w, h, false);
+  renderer.domElement.style.width = '100%';
+  renderer.domElement.style.height = '100%';
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(redimensionar).observe(el);
+
+// ------------------------------------------------------------ vista das peças
+const el2 = document.getElementById('vistaPecas');
+const renderer2 = new THREE.WebGLRenderer({ antialias: true });
+renderer2.setPixelRatio(window.devicePixelRatio);
+el2.appendChild(renderer2.domElement);
+const scene2 = new THREE.Scene();
+scene2.background = new THREE.Color(0x13151a);
+const camera2 = new THREE.PerspectiveCamera(30, 16 / 9, 10, 50000);
+camera2.up.set(0, 0, 1);
+const controls2 = new OrbitControls(camera2, renderer2.domElement);
+controls2.enableDamping = true;
+scene2.add(new THREE.HemisphereLight(0xffffff, 0x404040, 1.6));
+const sol2 = new THREE.DirectionalLight(0xffffff, 1.6);
+sol2.position.set(-3, -1, 3);
+scene2.add(sol2);
+const gPecas = new THREE.Group();
+scene2.add(gPecas);
+let pecasEnquadradas = false;
+
+// as seis peças: externa (placa cega do lado de trás, longe da câmera) e interna, lado a
+// lado; níveis afastados EXPLODE na vertical; pinos presos na peça de baixo
+function montarPecas(A) {
+  limpar(gPecas);
+  const sep = A.yh + 60;
+  const tipos = [{ e: { xa: 0, xb: par.SE, cega: 'dir' }, du: -sep }, { e: { xa: 0, xb: par.SE, cega: null }, du: sep }];
+  NIVEIS.forEach(([k, mat], i) => {
+    for (const t of tipos) {
+      const g = new THREE.Group();
+      g.position.set(0, t.du, i * EXPLODE);
+      for (const m of meshesEstacao(A, k, mat, t.e, 0)) g.add(m);
+      for (const q of A.pinos.filter(q => q.k === k)) g.add(meshPino(t.e, q, 0));
+      gPecas.add(g);
+    }
+  });
+  if (!pecasEnquadradas) { enquadrarPecas(A); pecasEnquadradas = true; }
+}
+
+function enquadrarPecas(A = arranjo(par)) {
+  const alvo = new THREE.Vector3(par.SE / 2, 0, (par.T + A.ztop + 2 * EXPLODE) / 2);
+  const d = new THREE.Vector3(-1, -0.35, 0.4).normalize().multiplyScalar((A.yh + 60) * 2 * 3.1);
+  camera2.position.copy(alvo).add(d);
+  controls2.target.copy(alvo);
+  controls2.update();
+}
+bEnq.onclick = () => enquadrarPecas();
+
+function redimensionar2() {
+  const w = el2.clientWidth, h = el2.clientHeight;
+  renderer2.setSize(w, h, false);
+  renderer2.domElement.style.width = '100%';
+  renderer2.domElement.style.height = '100%';
+  camera2.aspect = w / h;
+  camera2.updateProjectionMatrix();
+}
+new ResizeObserver(redimensionar2).observe(el2);
+
+(function loop() {
+  controls.update(); renderer.render(scene, camera);
+  controls2.update(); renderer2.render(scene2, camera2);
+  requestAnimationFrame(loop);
+})();
+
+// ------------------------------------------------------------ tabelas
+const f0 = v => (Math.round(v * 10) / 10).toLocaleString('pt-BR');
+const f2 = v => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function tabelas() {
+  const L = pecas(par);
+  // MDF: maior e menor lado da chapa (a espessura é a menor dimensão)
+  let html = '<tr><th>chapa</th><th>qtd</th><th>dimensões</th><th>m²</th></tr>';
+  const chapas = {};
+  for (const q of L.filter(q => q.grupo === 'mdf')) {
+    const d = [q.dx, q.dy, q.dz].sort((a, b) => b - a);
+    const nome = q.nome.replace(/Lateral (esquerda|direita)$/, 'Laterais').replace(/(Frente|Traseira)$/, 'Frente / traseira');
+    const k = nome + '|' + d[0] + '|' + d[1];
+    chapas[k] = chapas[k] || { nome, a: d[0], b: d[1], n: 0 };
+    chapas[k].n++;
+  }
+  let area = 0;
+  const furos = par.FD > 0 ? N_COPOS * Math.PI * (par.FD / 2) ** 2 / 1e6 : 0;
+  for (const c of Object.values(chapas)) {
+    const tampo = c.nome === 'Tampa — Topo' && furos > 0;
+    const m2 = c.n * c.a * c.b / 1e6 - (tampo ? furos : 0); area += m2;
+    const nome = tampo ? `${c.nome} (${N_COPOS} furos Ø${f0(par.FD)}${par.NF > 0 && par.CI > 0 ? ` + ${N_COPOS * par.NF} furos Ø${f0(par.FF + FOLGA_PARAF)}` : ''})` : c.nome;
+    html += `<tr><td>${nome}</td><td>${c.n}</td><td>${f0(c.a)} × ${f0(c.b)}</td><td>${f2(m2)}</td></tr>`;
+  }
+  if (par.PF > 0) {
+    const Af = arranjo(par), m2 = areaMulti(Af.fundo) / 1e6; area += m2;
+    html += `<tr><td>Placa de posicionamento (${f0(par.PF)} mm, recortada)</td><td>1</td><td>${f0(Af.xp1 - par.T - par.P)} × ${f0(par.D - 2 * par.T - 2 * par.P)}</td><td>${f2(m2)}</td></tr>`;
+  }
+  html += `<tr class="tot"><td>total</td><td></td><td></td><td>${f2(area)}</td></tr>`;
+  tMdf.innerHTML = html;
+
+  // tubos: agrupados por comprimento
+  const tubos = {};
+  for (const q of L.filter(q => q.grupo === 'tubo')) {
+    const c = Math.max(q.dx, q.dy, q.dz);
+    const k = q.nome + '|' + c.toFixed(1);
+    tubos[k] = tubos[k] || { nome: q.nome, c, n: 0 };
+    tubos[k].n++;
+  }
+  let tot = 0, ntub = 0;
+  html = '<tr><th>peça</th><th>qtd</th><th>comprimento</th><th>m</th></tr>';
+  for (const t of Object.values(tubos).sort((a, b) => b.c - a.c)) {
+    const m = t.n * t.c / 1000; tot += m; ntub += t.n;
+    html += `<tr><td>${t.nome}</td><td>${t.n}</td><td>${f0(t.c)}</td><td>${f2(m)}</td></tr>`;
+  }
+  html += `<tr class="tot"><td>total (${par.P}×${par.P})</td><td>${ntub}</td><td></td><td>${f2(tot)}</td></tr>`;
+  tTubos.innerHTML = html;
+
+  const n3 = L.filter(q => q.grupo === 'con3').length, nT = L.filter(q => q.grupo === 'conT').length;
+  html = '<tr><th>tipo</th><th>qtd</th></tr>' +
+    `<tr><td><span class="sw" style="background:#f28c28"></span>3 eixos (canto)</td><td>${n3}</td></tr>`;
+  if (nT) html += `<tr><td><span class="sw" style="background:#f28c28"></span>T espigão (reforço)</td><td>${nT}</td></tr>`;
+  const nE = L.filter(q => q.grupo === 'esp').length;
+  if (nE) html += `<tr><td><span class="sw" style="background:#e8d36a"></span>Espaçador da tampa (a desenhar), ${ESPAC_L} mm</td><td>${nE}</td></tr>`;
+  html += `<tr class="tot"><td>total</td><td>${n3 + nT + nE}</td></tr>`;
+  tCon.innerHTML = html;
+
+  const ext = `Externo ${par.W} × ${par.D} × ${par.H} mm (L × P × A). Vão interno ${par.W - 2 * par.T} × ${par.D - 2 * par.T} × ${par.H - par.T} mm.`;
+  const gap = par.N > 0 ? ` Vão livre entre colunas na face de largura: ${f0((par.W - 2 * par.T - (par.N + 2) * par.P) / (par.N + 1))} mm.` : '';
+  const reb = ` Topo dos tubos de cima a ${f0(par.H - par.R)} mm do chão (${f0(par.R)} mm abaixo da borda).`;
+  aviso.textContent = ext + gap + reb;
+
+  // acrílico e suportes
+  const A = arranjo(par);
+  const ci = caixaMulti(A.inf.peca), cs = caixaMulti(A.sup.peca), ct = caixaMulti(A.top.peca);
+  const ns = A.est.length, nm = ns - 2, CB = par.CB, SE = par.SE;
+  // volume impresso (cm³): pontas = berços em (SE − CB) + placa cega cheia em CB
+  const areaP = mp => areaMulti(mp);
+  const volMeio = k => areaP(A[k].peca) * SE / 1000;
+  const volPonta = k => (areaP(A[k].peca) * (SE - CB) + areaP(A[k].cont) * CB) / 1000;
+  // forro: área do anel / espessura = comprimento de contato; × largura da faixa
+  const evaM2 = par.EV > 0 ? ['inf', 'sup', 'top'].reduce((s, k) => s + areaP(A[k].eva) / par.EV * (2 * (SE - CB) + nm * SE), 0) / 1e6 : 0;
+  const linha = (cor, nome, n, c, v) => `<tr><td><span class="sw" style="background:${cor}"></span>${nome}</td><td>${n}</td><td>${f0(c.du)} × ${f0(c.dv)} × ${f0(SE)}</td><td>${f0(v)}</td></tr>`;
+  let h = '<tr><th>peça</th><th>qtd</th><th>dimensões</th><th>cm³ cada</th></tr>' +
+    `<tr><td>Tubo de acrílico</td><td>5</td><td>Ø${f0(par.AD)} × ${f0(par.AE)} × ${f0(par.AL)}</td><td></td></tr>` +
+    linha('#5b8fd6', 'Suporte inferior — externa (placa cega)', 2, ci, volPonta('inf'));
+  if (nm) h += linha('#5b8fd6', 'Suporte inferior — interna', nm, ci, volMeio('inf'));
+  h += linha('#59b37a', 'Suporte intermediário — externa (placa cega)', 2, cs, volPonta('sup'));
+  if (nm) h += linha('#59b37a', 'Suporte intermediário — interna', nm, cs, volMeio('sup'));
+  h += linha('#c98bd9', 'Suporte superior — externa (placa cega)', 2, ct, volPonta('top'));
+  if (nm) h += linha('#c98bd9', 'Suporte superior — interna', nm, ct, volMeio('top'));
+  const nPinos = ns * A.pinos.length;
+  h += `<tr><td><span class="sw" style="background:#9a9da3"></span>Pino de encaixe (cavilha / barra roscada)</td><td>${nPinos}</td><td>Ø${f0(par.PD)} × ${f0(par.PL)}</td><td></td></tr>`;
+  if (par.EV > 0) h += `<tr><td><span class="sw" style="background:#2b2b2e;border:1px solid #555"></span>Forro EVA ${f0(par.EV)} mm</td><td></td><td>${f2(evaM2)} m²</td><td></td></tr>`;
+  let volTot = ['inf', 'sup', 'top'].reduce((s, k) => s + 2 * volPonta(k) + nm * volMeio(k), 0);
+  const C = perfilCopo(par), paredeCopo = C.Ro - C.ri;
+  if (par.FD > 0 && par.CI > 0) {
+    const vCopo = volRevol(C.pts) / 1000;
+    const cortes = cortesAba(par, C), nCort = cortes.filter(Boolean).length;
+    const dims = `Ø${f0(2 * C.Ra)} × ${f0(C.zBoca)} (int. Ø${f0(2 * C.ri)} × ${f0(par.CI)})`;
+    const nome = `Copo da tampa (parede ${f0(paredeCopo)}, fundo ${COPO_FUNDO}, aba ${f0(par.CA)})`;
+    if (N_COPOS - nCort) {
+      volTot += (N_COPOS - nCort) * vCopo;
+      h += `<tr><td><span class="sw" style="background:#f2a65a"></span>${nome}</td><td>${N_COPOS - nCort}</td><td>${dims}</td><td>${f0(vCopo)}</td></tr>`;
+    }
+    if (nCort) {
+      const k = cortes.find(Boolean), vC = vCopo - volCorte(C, k.d) / 1000;
+      volTot += nCort * vC;
+      h += `<tr><td><span class="sw" style="background:#f2a65a"></span>${nome} — ponta, aba recortada a ${f0(k.d)} mm do eixo</td><td>${nCort}</td><td>${dims}</td><td>${f0(vC)}</td></tr>`;
+    }
+    if (par.AR > 0) {
+      const vAnel = Math.PI * (C.Ra * C.Ra - C.ri * C.ri) * par.AR / 1000;
+      volTot += N_COPOS * vAnel;
+      h += `<tr><td><span class="sw" style="background:#e0e0e0"></span>Anel de acabamento</td><td>${N_COPOS}</td><td>Ø${f0(2 * C.Ra)} / Ø${f0(2 * C.ri)} × ${f0(par.AR)}</td><td>${f0(vAnel)}</td></tr>`;
+    }
+    if (par.NF > 0) h += `<tr><td><span class="sw" style="background:#9a9da3"></span>Parafuso passante (anel + MDF + aba)</td><td>${N_COPOS * par.NF}</td><td>Ø${f0(par.FF)} × ${f0(Math.ceil(par.AR + par.T + par.CA / 2 + 0.8 * par.FF + 2))} mín. + porca</td><td></td></tr>`;
+  }
+  h += `<tr class="tot"><td colspan="3">volume impresso total (sólido, sem descontar preenchimento)</td><td>${f0(volTot)}</td></tr>`;
+  tAcr.innerHTML = h;
+
+  // folgas e interferências
+  const P = par.P, T = par.T;
+  const dmin = par.AD + par.AG;
+  const fH = 2 * A.a - par.AD, fV = 2 * A.b - par.AD;
+  const alma = par.AG - 2 * par.EV;   // material impresso entre berços vizinhos
+  const topoAcr = A.zt + A.ro, tampa = par.H - par.R;
+  const livreY = (par.D - 2 * T - 2 * P) / 2 - A.yh;
+  const livreX = (A.xp1) - A.xs1;
+  const regra = A.b <= dmin / 2 + 0.05 ? ' — limitado pela folga entre os tubos de cima/de baixo'
+              : ' — limitado pela folga canto–meio';
+  const msg = [
+    `Arranjo: tubos de canto a ±${f0(A.a)} mm (horizontal) e ±${f0(A.b)} mm (vertical) do tubo do meio; horizontal até a margem lateral, vertical mínima${regra}.`,
+    `Folga entre tubos: canto–meio ${f0(Math.hypot(A.a, A.b) - par.AD)} mm; lado a lado ${f0(fH)} mm; em cima/embaixo ${f0(fV)} mm.`,
+    `Eixos: baixo a ${f0(A.zb)}, meio a ${f0(A.zc)}, cima a ${f0(A.zt)} mm do chão; topo do acrílico a ${f0(topoAcr)} mm.`,
+    `Topo do suporte superior a ${f0(A.ztop)} mm: até o apoio da tampa (topo dos tubos da borda, ${f0(tampa)} mm): ${f0(tampa - A.ztop)} mm; até o tampo da tampa (${f0(par.H + par.LH - T)} mm): ${f0(par.H + par.LH - T - A.ztop)} mm.`,
+    `Fillet das quinas internas do suporte intermediário: R${f0(A.rf)}${A.rf < par.RF - 0.05 ? ` (limitado de R${f0(par.RF)} para não encostar no tubo de baixo)` : ''}.`,
+    `Pernas laterais e apoio na torre: ${f0(par.PM)} mm. Alma entre berços vizinhos (folga − 2 × EVA): ${f0(alma)} mm.`,
+    `Suporte até os tubos da estrutura: ${f0(livreY)} mm de cada lado (frente/trás). Conjunto encostado à esquerda; sobra à direita até a borda da placa de posicionamento: ${f0(livreX)} mm.`,
+    `Estações em X (faces externas): ${A.est.map(e => f0(e.xa) + '–' + f0(e.xb)).join(' · ')} mm.`,
+  ];
+  // painel de espaço livre: acima do suporte do topo até a tampa; à direita do conjunto,
+  // até as colunas de canto × entre os tubos da estrutura × da placa de posicionamento à tampa
+  // com a tampa fechada, o limite em cima é a face de baixo do tampo dela (os tubos e
+  // espaçadores da tampa correm junto às paredes, fora da projeção dos suportes)
+  const tetoTampa = par.H + par.LH - T;
+  const comCopos = par.FD > 0 && par.CI > 0;
+  const fundoCopo = par.H + par.LH - C.zBoca;
+  const teto = comCopos ? Math.min(tetoTampa, fundoCopo) : tetoTampa;
+  const hLim = comCopos && fundoCopo < tetoTampa ? 'fundo dos copos' : 'tampo da tampa';
+  const hTopo = teto - A.ztop;
+  // à direita: os copos só limitam a altura se algum furo cair nessa faixa de X
+  const copoDireita = comCopos && furosTampa(par).some(c => c.x + C.Ra > A.xs1);
+  const lx = livreX, ly = par.D - 2 * T - 2 * P, lz = (copoDireita ? teto : tetoTampa) - (T + par.PF);
+  const cls = v => v < 0 ? 'v ruim' : 'v';
+  livre.innerHTML =
+    `<div><div class="t">Livre acima dos tubos</div><div class="${cls(hTopo)}">${f0(hTopo)} mm</div>` +
+    `<div class="n">do suporte superior ao que estiver acima com a tampa fechada (${hLim}); ${tampa - A.ztop >= 0 ? f0(tampa - A.ztop) + ' mm abaixo' : f0(A.ztop - tampa) + ' mm acima'} do apoio da tampa (topo dos tubos da borda)</div></div>` +
+    `<div><div class="t">Livre à direita (X × Y × Z)</div><div class="${cls(Math.min(lx, lz))}">${f0(lx)} × ${f0(ly)} × ${f0(lz)}</div>` +
+    `<div class="n">da placa cega às colunas de canto × entre tubos da estrutura × da placa de posicionamento ao ${copoDireita ? hLim : 'tampo da tampa'} (tampa fechada)</div></div>`;
+
+  const mesa = 256;
+  if (Math.max(ci.du, ci.dv, cs.du, cs.dv, ct.du, ct.dv) > mesa) msg.push(`Peças maiores que a mesa de ${mesa} mm: a impressão exige dividir cada suporte.`);
+  if (alma < par.PM) msg.push(`<b style="color:#f2c14e">Alma entre berços abaixo da seção mínima (${f0(alma)} < ${f0(par.PM)} mm).</b>`);
+  if (A.a + A.r + par.PM > (par.D - 2 * T - 2 * P) / 2 - FOLGA_LAT + 0.01 && A.a <= dmin / 2 + 0.01) msg.push('<b style="color:#ff7d6b">Não cabe: nem com o X fechado ao máximo as pernas atingem a seção mínima.</b>');
+  if (par.FD > 0) {
+    const fs = furosTampa(par), Ra = comCopos ? C.Ra : par.FD / 2;
+    const xmin = fs[0].x - Ra, vaoFuros = par.FP - par.FD, vaoAbas = par.FP - 2 * Ra;
+    const sobraPonta = xmin - (T + P), passoMax = (par.W / 2 - (T + P) - Ra) / ((N_COPOS - 1) / 2);
+    msg.push(`Furos da tampa: Ø${f0(par.FD)} a cada ${f0(par.FP)} mm, centros em X ${fs.map(c => f0(c.x)).join(' · ')}; ${f0(vaoFuros)} mm de MDF entre furos.`);
+    if (comCopos) {
+      msg.push(`Copos: parede ${f0(paredeCopo)} mm, aba Ø${f0(2 * C.Ra)} (${f0(vaoAbas)} mm entre abas vizinhas, ${sobraPonta < 0 ? "abas das pontas recortadas junto aos tubos da tampa" : f0(sobraPonta) + " mm das abas das pontas até os tubos da tampa"}); fundo a ${f0(fundoCopo)} mm do chão com a tampa fechada (${f0(fundoCopo - A.ztop)} mm acima do suporte superior); anel de acabamento até ${f0(par.H + par.LH + par.AR)} mm.`);
+    }
+    const corte = comCopos ? cortesAba(par, C).find(Boolean) : null;
+    if (corte) msg.push(`Aba dos copos das pontas recortada a ${f0(FOLGA_ABA)} mm dos tubos da tampa: plano a ${f0(corte.d)} mm do eixo (aba com ${f0(corte.d - C.Ro)} mm nesse ponto, em vez de ${f0(par.CA)}).`);
+    const furoNoTubo = fs[0].x - par.FD / 2 < T + P;
+    if (vaoAbas < 0 || (corte ? corte.d < C.Ro + 2 : sobraPonta < 0) || furoNoTubo || Ra > (par.D - 2 * T - 2 * P) / 2)
+      msg.push(`<b style="color:#ff7d6b">${comCopos ? 'Copos' : 'Furos da tampa'} batem nos tubos da tampa ou uns nos outros${furoNoTubo ? ` (passo máximo para o furo ${f0((par.W / 2 - (T + P) - par.FD / 2) / ((N_COPOS - 1) / 2))} mm)` : ''}.</b>`);
+    if (paredeCopo <= 0) msg.push('<b style="color:#ff7d6b">Copo sem parede: Ø do furo menor que Ø do tubo + folga.</b>');
+  }
+  if (A.ztop > teto || livreY < 0 || livreX < 0) msg.push('<b style="color:#ff7d6b">Atenção: interferência com a estrutura.</b>');
+  folgas.innerHTML = msg.join('<br>');
+
+  if (par.BD > 0 && par.FD > 0 && par.CI > 0) {
+    const B = bolinhas(par);
+    const linhas = B.map((t, i) => {
+      return `T${i + 1} ${COMPETENCIAS[t.cor]}: <b>${t.n}</b>, pilha ${f0(t.altura)} mm${t.altura > par.AL ? ' <b style="color:#ff7d6b">acima do tubo</b>' : ''}`;
+    });
+    const sobre = Math.max(...B.map(t => t.sobre));
+    infoBolas.innerHTML = `Bolinhas Ø${f0(par.BD)}, cor da competência de cada tubo, semente ${par.BS}: ` + linhas.join(' · ') +
+      `. Total ${B.reduce((s, t) => s + t.n, 0)}. Maior sobreposição residual da simulação: ${f0(Math.max(0, sobre))} mm.`;
+  } else infoBolas.textContent = '';
+}
+
+// ------------------------------------------------------------ controles
+const campos = { pW: 'W', pH: 'H', pD: 'D', pT: 'T', pP: 'P', pN: 'N', pR: 'R',
+                 pAL: 'AL', pAD: 'AD', pAE: 'AE', pAG: 'AG', pSN: 'SN', pSE: 'SE', pEV: 'EV', pPM: 'PM', pCB: 'CB', pPF: 'PF', pRF: 'RF', pLH: 'LH',
+                 pPD: 'PD', pPL: 'PL', pFD: 'FD', pFP: 'FP', pCF: 'CF', pCI: 'CI', pCA: 'CA', pAR: 'AR', pNF: 'NF', pFF: 'FF',
+                 pBD: 'BD', pBN: 'BN', pBV: 'BV', pBS: 'BS' };
+function lerCampos() {
+  for (const [id, k] of Object.entries(campos)) {
+    const v = parseFloat(document.getElementById(id).value);
+    if (Number.isFinite(v) && v >= 0) par[k] = k === 'N' ? Math.min(6, Math.round(v)) : k === 'SN' ? Math.min(8, Math.max(2, Math.round(v))) : k === 'NF' ? Math.min(12, Math.round(v)) : v;
+  }
+  try { localStorage.setItem(CHAVE, JSON.stringify(par)); } catch (e) {}
+  montar();
+  aplicarCorte('r');
+}
+function escreverCampos() {
+  for (const [id, k] of Object.entries(campos)) document.getElementById(id).value = par[k];
+}
+for (const id of Object.keys(campos)) document.getElementById(id).addEventListener('change', lerCampos);
+sTampa.value = posTampa;
+sTampa.onchange = () => { posTampa = sTampa.value; try { localStorage.setItem(CHAVE + '-tampa', posTampa); } catch (e) {} posicionarTampa(); };
+bReset.onclick = () => { par = { ...PADRAO }; escreverCampos(); lerCampos(); vista('iso'); };
+for (const id of ['cMdf', 'cFrente', 'cTubos', 'cCon', 'cAcr', 'cInf', 'cSup', 'cTop', 'cPino', 'cFundo', 'cTampa', 'cCopo', 'cAnel', 'rAlpha', 'rCopo', 'rAnel'])
+  document.getElementById(id).addEventListener('input', visibilidade);
+document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => vista(b.dataset.v));
+rCorte.addEventListener('input', () => aplicarCorte('r'));
+nCorte.addEventListener('change', () => aplicarCorte('n'));
+sCorte.addEventListener('change', () => aplicarCorte('r'));
+cCorte.addEventListener('input', () => { aplicarCorte('r'); if (cCorte.checked) vista('corte'); });
+cMontada.addEventListener('input', () => { visibilidade(); aplicarCorte('r'); vista(cCorte.checked ? 'corte' : 'iso'); });
+corMontada.addEventListener('input', () => { visibilidade(); aplicarCorte('r'); });
+cBolas.addEventListener('input', visibilidade);
+bSortear.onclick = () => { pBS.value = Math.floor(Math.random() * 100000); lerCampos(); };
+
+function baixar(nome, conteudo, tipo) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+  a.download = nome;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// dados da cena para o Blender: parâmetros, posições das peças principais e bolinhas
+// em coordenadas do mundo (mm, Z para cima)
+function dadosCena() {
+  const C = perfilCopo(par), z0 = par.H + baseTuboMontado(C);
+  const furos = furosTampa(par);
+  return {
+    projeto: 'OS-2026-0857 · Mobiliário Termômetro das Competências',
+    gerado: new Date().toISOString(),
+    unidades: 'mm', eixos: 'X largura, Y profundidade, Z altura (para cima); origem no canto inferior esquerdo da frente',
+    parametros: { ...par }, cor_mdf: corMontada.value,
+    cores: Object.fromEntries(CORES_BOLAS.map(([n, c]) => [n, '#' + c.toString(16).padStart(6, '0')])),
+    competencias: COMPETENCIAS,
+    tubos: furos.map((c, i) => ({ tubo: i + 1, x: c.x, y: c.y, z_base: z0, diametro_ext: par.AD, parede: par.AE, comprimento: par.AL })),
+    bolinhas: bolinhas(par).flatMap((t, i) => t.pos.map(([x, y, z], j) => ({
+      tubo: i + 1, x: +(furos[i].x + x).toFixed(2), y: +(furos[i].y + y).toFixed(2), z: +(z0 + z).toFixed(2),
+      raio: par.BD / 2, cor: CORES_BOLAS[t.cores[j]][0] }))),
+  };
+}
+window.dadosCena = dadosCena;
+
+bJson.onclick = () => baixar('termometro-cena.json', JSON.stringify(dadosCena(), null, 1), 'application/json');
+
+// GLB da cena como está na tela (só o visível), sem contornos nem seções do corte;
+// convertido para metros e para o Y-para-cima do glTF (o Blender devolve Z para cima)
+function exportarGLB() {
+  return new Promise((ok, erro) => {
+    const escondidos = [];
+    scene.traverse(o => { if ((o.isLineSegments || o.userData.capa) && o.visible) { o.visible = false; escondidos.push(o); } });
+    const raiz = new THREE.Group();
+    raiz.name = 'Termometro_mobiliario';
+    raizCaixa.name = 'Caixa';
+    raizTampa.name = 'Tampa';
+    raiz.rotation.x = -Math.PI / 2;
+    raiz.scale.setScalar(0.001);
+    raiz.add(raizCaixa, raizTampa);
+    scene.add(raiz);
+    // nomes dos materiais para o Blender (os copos das pontas usam clones do material do copo)
+    const nomes = [[matMdf, 'MDF'], [matAcr, 'acrilico'], [matCopo, 'copo_PETG'], [matAnel, 'anel_acabamento'],
+      [matTubo, 'aluminio'], [matCon, 'conector_PETG'], [matInf, 'suporte_inferior'], [matSup, 'suporte_intermediario'],
+      [matTop, 'suporte_superior'], [matEva, 'EVA'], [matFundo, 'MDF_posicionamento'], [matPino, 'pino_metal'], [matEsp, 'espacador_PETG']];
+    for (const [m, n] of nomes) m.name = n;
+    raiz.traverse(o => { if (o.isMesh && !o.material.name) o.material.name = 'copo_PETG'; });  // clones com plano de recorte
+    const fim = () => { scene.add(raizCaixa, raizTampa); scene.remove(raiz); escondidos.forEach(o => { o.visible = true; }); };
+    new GLTFExporter().parse(raiz, glb => { fim(); ok(glb); }, e => { fim(); erro(e); }, { binary: true, onlyVisible: true });
+  });
+}
+window.exportarGLB = exportarGLB;
+bGlb.onclick = () => exportarGLB().then(glb => baixar('termometro-cena.glb', glb, 'model/gltf-binary')).catch(e => alert('Falha ao exportar: ' + e));
+
+escreverCampos();
+montar();
+redimensionar();
+vista('iso');
+aplicarCorte('r');
+</script>
+</body>
+</html>
