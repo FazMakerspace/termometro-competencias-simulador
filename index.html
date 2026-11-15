@@ -73,7 +73,7 @@
         <label class="cb"><input type="checkbox" id="cAcr" checked> tubos de acrílico</label>
         <label class="cb"><input type="checkbox" id="cInf" checked> suporte inferior</label>
         <label class="cb"><input type="checkbox" id="cSup" checked> suporte intermediário</label>
-        <label class="cb"><input type="checkbox" id="cTop" checked> suporte superior</label>
+        <label class="cb"><input type="checkbox" id="cTop"> trava superior (a definir)</label>
         <label class="cb"><input type="checkbox" id="cPino" checked> pinos</label>
         <label class="cb"><input type="checkbox" id="cFundo" checked> placa de posicionamento</label>
         <label class="cb"><input type="checkbox" id="cTampa" checked> tampa</label>
@@ -85,7 +85,8 @@
       </div>
       <h2>Peças do suporte (impressão 3D) <button id="bEnq" style="margin-left:8px">enquadrar</button></h2>
       <div id="vistaPecas"></div>
-      <div class="info k" style="margin-top:6px">Seis modelos, afastados na vertical na ordem de montagem: inferior (azul), intermediário (verde) e superior (roxo).
+      <div class="info k" style="margin-top:6px">Berços V2b, afastados na vertical na ordem de montagem: inferior (azul) e intermediário (verde); o roxo é a trava superior da V2a, ainda a redefinir.
+        Montagem: inferior → 2 tubos de baixo → intermediário → tubo do meio → 2 tubos de cima → trava.
         À esquerda a peça externa, com a placa cega; à direita a interna. Os pinos (cinza) ficam metade em cada peça; os furos correspondentes
         entram quando o modelo for gerado para impressão.</div>
     </div>
@@ -97,7 +98,7 @@
         rebaixo dos tubos de cima <input type="number" id="pR" step="1" min="0"></div>
       <div class="ctl">tubos de acrílico: comprimento <input type="number" id="pAL" step="10"> Ø externo <input type="number" id="pAD" step="1"> parede <input type="number" id="pAE" step="0.5"> folga mínima <input type="number" id="pAG" step="1"></div>
       <div class="ctl">suportes: estações <input type="number" id="pSN" step="1" min="2" max="8"> largura da placa <input type="number" id="pSE" step="1"> forro EVA <input type="number" id="pEV" step="0.5">
-        seção mínima <input type="number" id="pPM" step="1"> placa cega <input type="number" id="pCB" step="1"> fillet do intermediário <input type="number" id="pRF" step="1"></div>
+        seção mínima <input type="number" id="pPM" step="1"> placa cega <input type="number" id="pCB" step="1"> fillet (sem uso na V2b) <input type="number" id="pRF" step="1"></div>
       <div class="ctl">placa de posicionamento (fundo) <input type="number" id="pPF" step="1"> <span class="k">0 = sem placa</span></div>
       <div class="ctl">pinos de encaixe: Ø <input type="number" id="pPD" step="1"> comprimento <input type="number" id="pPL" step="1"> <span class="k">cavilha / barra roscada</span></div>
       <div class="ctl">tampa: altura <input type="number" id="pLH" step="5"> furos: Ø <input type="number" id="pFD" step="1"> passo <input type="number" id="pFP" step="5"></div>
@@ -129,6 +130,8 @@
         encaixam na boca da caixa e apoiam nos tubos da borda dela. Espaçadores impressos (40 mm, a desenhar) no lugar dos reforços.
         Tampo da tampa com 5 furos em linha no meio da profundidade; copos impressos com Ø externo = Ø do furo, topo rente ao tampo,
         Ø interno = Ø do tubo + folga (folga final a ajustar com os tubos em mãos).
+        Berços V2b em 2 níveis: o inferior só com os tubos de baixo; o intermediário fecha os de baixo por cima, recebe o tubo do meio
+        em meio berço e os tubos de cima; aberto acima do eixo do tubo do meio para ele descer. Trava superior a definir.
         Níveis do suporte travados entre si por pinos verticais (cavilha ou barra roscada) no meio das seções de 20 mm.
       </div>
     </div>
@@ -286,17 +289,17 @@ function arranjo(p) {
     return { cont, peca: pc.difference(cont, ...fora),
              eva: p.EV > 0 ? pc.difference(pc.intersection(cont, pc.union(...fora)), ...dentro) : [] };
   };
-  // suporte inferior: base até o eixo dos tubos de baixo + torre até o eixo do tubo do meio
-  const inf = recortar(pc.union(RET(-yh, p.T, yh, zb), RET(-tw, zb, tw, zc)), [[-a, zb], [a, zb], [0, zc]]);
-  // suporte intermediário: apoia na torre e nos ombros do inferior; berços dos tubos de cima
-  // até o eixo; abraça a metade de cima do tubo do meio
-  // fillet nas quinas internas perna/corpo, limitado para não chegar a menos de EV do tubo de baixo
-  const rf = raioFillet(p.RF, a + r, zc, a, zb, r);
-  const fil = s => pc.difference(RET(s > 0 ? a + r - rf : -(a + r), zc - rf, s > 0 ? a + r : -(a + r) + rf, zc),
-                                CIRC(s * (a + r - rf), zc - rf, rf));
-  const sup = recortar(pc.union(RET(-yh, zc, yh, zt), RET(-yh, zb, -(a + r), zc), RET(a + r, zb, yh, zc),
-                                ...(rf > 0 ? [fil(1), fil(-1)] : [])), [[-a, zt], [a, zt], [0, zc]]);
-  // suporte superior: fecha a metade de cima dos tubos de cima com PM de material acima do forro
+  // V2b (14/11/2026) — 2 níveis montáveis de cima para baixo.
+  // suporte inferior: só os berços dos 2 tubos de baixo, topo reto no eixo deles
+  const inf = recortar(RET(-yh, p.T, yh, zb), [[-a, zb], [a, zb]]);
+  // suporte intermediário: de zb a zt; fecha a metade de cima dos tubos de baixo, berço de meio
+  // tubo do tubo do meio e berços dos tubos de cima. Aberto acima do eixo do tubo do meio na
+  // faixa |u| < r (caminho de descida dele): o lado de dentro dos berços de cima fica mais curto.
+  const rf = 0;
+  const supR = recortar(RET(-yh, zb, yh, zt), [[-a, zb], [a, zb], [0, zc], [-a, zt], [a, zt]]);
+  const sup = { cont: supR.cont, peca: pc.difference(supR.peca, RET(-r, zc, r, zt + 1)),
+                eva: supR.eva.length ? pc.difference(supR.eva, RET(-r, zc, r, zt + 1)) : [] };
+  // trava superior: ainda a definir (V2b). Fica aqui a peça da V2a, só como referência de altura.
   const top = recortar(RET(-yh, zt, yh, zt + r + p.PM), [[-a, zt], [a, zt]]);
 
   // ao longo de X: conjunto encostado no lado esquerdo. A placa de posicionamento ocupa
@@ -322,9 +325,8 @@ function arranjo(p) {
   // bordas de fora e, se couber, no centro entre os dois berços de cima
   const um = p.PM / 2;
   const pinos = [
-    ...[-1, 1].flatMap(s => [{ k: 'inf', u: s * (r + um), v: zc }, { k: 'inf', u: s * (a + r + um), v: zb }]),
+    { k: 'inf', u: 0, v: zb }, ...[-1, 1].map(s => ({ k: 'inf', u: s * (a + r + um), v: zb })),
     ...[-1, 1].map(s => ({ k: 'sup', u: s * (a + r + um), v: zt })),
-    ...(a - r >= p.PD ? [{ k: 'sup', u: 0, v: zt }] : []),
   ];
 
   return { a, b, r, ro, zb, zc, zt, x0, x1, xs1, xp1, tubos, inf, sup, top, est, yh, fundo, rf, ztop: zt + r + p.PM, pinos };
@@ -1104,8 +1106,8 @@ function tabelas() {
   if (nm) h += linha('#5b8fd6', 'Suporte inferior — interna', nm, ci, volMeio('inf'));
   h += linha('#59b37a', 'Suporte intermediário — externa (placa cega)', 2, cs, volPonta('sup'));
   if (nm) h += linha('#59b37a', 'Suporte intermediário — interna', nm, cs, volMeio('sup'));
-  h += linha('#c98bd9', 'Suporte superior — externa (placa cega)', 2, ct, volPonta('top'));
-  if (nm) h += linha('#c98bd9', 'Suporte superior — interna', nm, ct, volMeio('top'));
+  h += linha('#c98bd9', 'Trava superior (V2a, a redefinir) — externa', 2, ct, volPonta('top'));
+  if (nm) h += linha('#c98bd9', 'Trava superior (V2a, a redefinir) — interna', nm, ct, volMeio('top'));
   const nPinos = ns * A.pinos.length;
   h += `<tr><td><span class="sw" style="background:#9a9da3"></span>Pino de encaixe (cavilha / barra roscada)</td><td>${nPinos}</td><td>Ø${f0(par.PD)} × ${f0(par.PL)}</td><td></td></tr>`;
   if (par.EV > 0) h += `<tr><td><span class="sw" style="background:#2b2b2e;border:1px solid #555"></span>Forro EVA ${f0(par.EV)} mm</td><td></td><td>${f2(evaM2)} m²</td><td></td></tr>`;
@@ -1150,8 +1152,8 @@ function tabelas() {
     `Folga entre tubos: canto–meio ${f0(Math.hypot(A.a, A.b) - par.AD)} mm; lado a lado ${f0(fH)} mm; em cima/embaixo ${f0(fV)} mm.`,
     `Eixos: baixo a ${f0(A.zb)}, meio a ${f0(A.zc)}, cima a ${f0(A.zt)} mm do chão; topo do acrílico a ${f0(topoAcr)} mm.`,
     `Topo do suporte superior a ${f0(A.ztop)} mm: até o apoio da tampa (topo dos tubos da borda, ${f0(tampa)} mm): ${f0(tampa - A.ztop)} mm; até o tampo da tampa (${f0(par.H + par.LH - T)} mm): ${f0(par.H + par.LH - T - A.ztop)} mm.`,
-    `Fillet das quinas internas do suporte intermediário: R${f0(A.rf)}${A.rf < par.RF - 0.05 ? ` (limitado de R${f0(par.RF)} para não encostar no tubo de baixo)` : ''}.`,
-    `Pernas laterais e apoio na torre: ${f0(par.PM)} mm. Alma entre berços vizinhos (folga − 2 × EVA): ${f0(alma)} mm.`,
+    `Berço dos tubos de cima, lado de dentro: termina em u = ±${f0(A.r)} (caminho do tubo do meio), abraçando ${f0(Math.asin(Math.min(1, Math.max(-1, (A.a - A.r) / A.r))) * 180 / Math.PI)}° a partir do fundo (lado de fora: 90°).`,
+    `Pernas laterais: ${f0(par.PM)} mm. Alma entre berços vizinhos (folga − 2 × EVA): ${f0(alma)} mm.`,
     `Suporte até os tubos da estrutura: ${f0(livreY)} mm de cada lado (frente/trás). Conjunto encostado à esquerda; sobra à direita até a borda da placa de posicionamento: ${f0(livreX)} mm.`,
     `Estações em X (faces externas): ${A.est.map(e => f0(e.xa) + '–' + f0(e.xb)).join(' · ')} mm.`,
   ];
