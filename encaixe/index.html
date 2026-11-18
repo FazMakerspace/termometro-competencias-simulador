@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encaixe ETA V2f</title>
+<style>
+  :root { --bg:#16181d; --painel:#1e2128; --txt:#d8dade; --sub:#9aa0aa; --borda:#2d313a; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:14px system-ui, sans-serif; }
+  .wrap { display:grid; grid-template-columns: minmax(0, 1fr) 330px; gap:10px; padding:10px; height:100vh; }
+  #vista { position:relative; border-radius:8px; overflow:hidden; background:#13151a; touch-action:none; min-height:300px; }
+  #vista canvas { display:block; position:absolute; inset:0; }
+  .card { background:var(--painel); border:1px solid var(--borda); border-radius:8px; padding:10px; overflow:auto; }
+  h1 { font-size:16px; margin:0 0 4px; }
+  h2 { font-size:13px; margin:14px 0 6px; color:var(--sub); text-transform:uppercase; letter-spacing:.04em; }
+  .k { color:var(--sub); font-size:12.5px; line-height:1.45; }
+  .peca { display:grid; grid-template-columns: 18px 14px 1fr 80px; align-items:center; gap:6px; margin:4px 0; font-size:13px; }
+  .sw { width:14px; height:14px; border-radius:3px; border:1px solid #0006; }
+  input[type=range] { width:100%; }
+  .linha { display:flex; align-items:center; gap:8px; margin:6px 0; font-size:13px; }
+  .linha label { white-space:nowrap; }
+  .val { color:var(--sub); font-variant-numeric: tabular-nums; min-width:70px; text-align:right; font-size:12.5px; }
+  button { background:#2a2f38; color:var(--txt); border:1px solid #3a404b; border-radius:6px; padding:5px 9px; font-size:12.5px; cursor:pointer; }
+  button:hover { background:#333945; }
+  .botoes { display:flex; flex-wrap:wrap; gap:6px; }
+  #estado { position:absolute; left:10px; top:10px; background:#1e2128cc; border:1px solid var(--borda); border-radius:6px; padding:6px 9px; font-size:12.5px; pointer-events:none; }
+  #carregando { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--sub); }
+  @media (max-width: 820px) {
+    .wrap { grid-template-columns: 1fr; height:auto; }
+    #vista { height:62vh; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="vista"><div id="carregando">carregando peças…</div><div id="estado"></div></div>
+  <div class="card">
+    <h1>Encaixe do tubo na tampa — ETA V2f</h1>
+    <div class="k">Montagem de 1 copo: tubo Ø200 × 4, luva (tubo 200), copo Ø205 interno, anel, segmento de 300 × 300 do tampo MDF 6
+      com furo Ø210, MDF 6 de baixo e parafusos. Peças do modelo encaixe_copo_V2f.FCStd, já na posição de montagem.</div>
+
+    <h2>Peças</h2>
+    <div id="pecas"></div>
+    <div class="k">O controle à direita de cada peça é a opacidade.</div>
+
+    <h2>Montagem da luva</h2>
+    <div class="linha"><input type="range" id="rMont" min="0" max="1" step="0.005" value="1"><span class="val" id="vMont"></span></div>
+    <div class="k">0 → 60 %: luva + tubo descem com as entradas alinhadas às cabeças dos parafusos-pino.
+      60 → 100 %: giro no sentido horário (visto de cima) até a cabeça encostar no fim do sulco.</div>
+    <div class="botoes" style="margin-top:6px"><button id="bAnim">▶ animar montagem</button></div>
+
+    <h2>Vista explodida</h2>
+    <div class="linha"><input type="range" id="rExp" min="0" max="1" step="0.01" value="0"><span class="val" id="vExp"></span></div>
+
+    <h2>Corte</h2>
+    <div class="linha"><label><input type="checkbox" id="cCorte" checked> cortar pelo eixo</label></div>
+    <div class="linha"><label>ângulo</label><input type="range" id="rAng" min="0" max="360" step="1" value="30"><span class="val" id="vAng"></span></div>
+    <div class="botoes">
+      <button data-ang="30">pelo pino (30°)</button>
+      <button data-ang="90">pelo M4 (90°)</button>
+      <button data-ang="60">entre torres</button>
+    </div>
+
+    <h2>Câmera</h2>
+    <div class="botoes">
+      <button id="vIso">3D</button><button id="vFrente">frente</button><button id="vCima">de cima</button>
+      <button id="vBaixo">de baixo</button><button id="vPino">zoom no pino</button>
+    </div>
+
+    <h2>Parafusos</h2>
+    <div class="k">
+      <b style="color:#ff7a45">Pinos da baioneta (3×):</b> autoatarraxante cabeça panela 3,5 × 13 (DIN 7981), aparafusado de dentro do copo
+      para fora, radial, a 30° / 150° / 270°, 9,5 mm acima do fundo do copo. A rosca fica toda na parede (2,5) + torre (10,5);
+      a ponta para ~4,4 mm antes da face da torre. A cabeça (Ø6,9 × 2,6) fica para dentro e corre no sulco da luva (2,75 de fundo).<br>
+      <b style="color:#b9c2cc">M4 × 80 (3×):</b> de baixo, cabeça + arruela sob o MDF 6 de baixo → torre do copo → aba → tampo →
+      porca parlock embutida no anel, a 90° / 210° / 330°, círculo de raio 115.
+    </div>
+    <h2>Conferido no modelo</h2>
+    <div class="k" id="conf">Sem interferência entre tubo, luva, copo, anel, tampo e M4. Luva desce livre com as entradas nas cabeças;
+      giro livre até <span id="tGiro"></span> (≈ 20 mm no Ø externo da luva); travada, não sobe.</div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+const PECAS = [
+  // nome, rótulo, cor, opacidade, explosão (mm em Z), segue a luva na montagem
+  { id: 'tubo',           nome: 'Tubo de acrílico Ø200 × 4', cor: 0xbfe3ff, op: 0.28, exp: 330, luva: true },
+  { id: 'luva',           nome: 'Luva (tubo 200)',            cor: 0xe6e6e6, op: 1.0,  exp: 230, luva: true },
+  { id: 'anel',           nome: 'Anel de acabamento',         cor: 0x3557b0, op: 1.0,  exp: 150 },
+  { id: 'tampa',          nome: 'Tampo MDF 6 (segmento)',     cor: 0xb8915e, op: 0.85, exp: 75 },
+  { id: 'copo',           nome: 'Copo Ø205',                  cor: 0x2f4f9e, op: 1.0,  exp: 0 },
+  { id: 'parafusos_pino', nome: 'Parafusos-pino 3,5 × 13',    cor: 0xff7a45, op: 1.0,  exp: 0 },
+  { id: 'parafusos_m4',   nome: 'M4 × 80 + arruela + porca',  cor: 0xb9c2cc, op: 1.0,  exp: -150, porca: true },
+  { id: 'mdf_baixo',      nome: 'MDF 6 de baixo (segmento)',  cor: 0x9c7a4f, op: 0.85, exp: -75 },
+];
+
+const vista = document.getElementById('vista');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.localClippingEnabled = true;
+vista.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x13151a);
+const camera = new THREE.PerspectiveCamera(35, 1, 1, 10000);
+camera.up.set(0, 0, 1);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x404050, 1.6));
+const sol = new THREE.DirectionalLight(0xffffff, 1.6); sol.position.set(300, -400, 600); scene.add(sol);
+const sol2 = new THREE.DirectionalLight(0xffffff, 0.6); sol2.position.set(-400, 300, -200); scene.add(sol2);
+
+const plano = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
+const meshes = {};
+let POS = { giro_trava: -11.3 };
+
+function ajustar() {
+  const w = vista.clientWidth, h = vista.clientHeight;
+  renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(ajustar).observe(vista);
+
+function cam(pos, alvo = [0, 0, 40]) {
+  camera.position.set(...pos); controls.target.set(...alvo); controls.update();
+}
+const visoes = {
+  vIso: () => cam([420, -520, 380]),
+  vFrente: () => cam([0, -760, 60]),
+  vCima: () => cam([0, -1, 820], [0, 0, 0]),
+  vBaixo: () => cam([0, -1, -760], [0, 0, 0]),
+  // olha a face do corte (plano que passa pelo eixo e pelo pino a 30°), do lado removido
+  vPino: () => { const a = POS.ang_pino * Math.PI / 180, r = 106, z = POS.z_pino;
+                 rAng.value = POS.ang_pino; cCorte.checked = true; atualizar();
+                 const nx = -Math.sin(a), ny = Math.cos(a);
+                 cam([r * Math.cos(a) - 110 * nx, r * Math.sin(a) - 110 * ny, z + 25], [r * Math.cos(a), r * Math.sin(a), z]); },
+};
+for (const id in visoes) document.getElementById(id).onclick = visoes[id];
+
+// lista de peças
+const lista = document.getElementById('pecas');
+for (const p of PECAS) {
+  const d = document.createElement('div'); d.className = 'peca';
+  d.innerHTML = `<input type="checkbox" checked><span class="sw" style="background:#${p.cor.toString(16).padStart(6, '0')}"></span>
+    <span>${p.nome}</span><input type="range" min="0.05" max="1" step="0.05" value="${p.op}">`;
+  const [cb, , , rg] = d.children;
+  cb.onchange = () => { if (meshes[p.id]) meshes[p.id].visible = cb.checked; };
+  rg.oninput = () => { p.op = +rg.value; if (meshes[p.id]) { material(meshes[p.id].material, p.op); atualizar(); } };
+  lista.appendChild(d);
+}
+function material(m, op) {
+  m.opacity = op; m.transparent = op < 0.999; m.depthWrite = op >= 0.999;
+  m.side = op < 0.999 ? THREE.DoubleSide : THREE.FrontSide; m.needsUpdate = true;
+}
+
+const rMont = document.getElementById('rMont'), rExp = document.getElementById('rExp'), rAng = document.getElementById('rAng');
+const cCorte = document.getElementById('cCorte');
+function atualizar() {
+  const m = +rMont.value, e = +rExp.value;
+  const desce = m < 0.6 ? (1 - m / 0.6) * 140 : 0;
+  const giro = m <= 0.6 ? 0 : (m - 0.6) / 0.4 * POS.giro_trava;
+  for (const p of PECAS) {
+    const o = meshes[p.id]; if (!o) continue;
+    o.position.z = p.exp * e + (p.luva ? desce : 0);
+    o.rotation.z = p.luva ? giro * Math.PI / 180 : 0;
+  }
+  document.getElementById('vMont').textContent = m < 0.6 ? `descendo ${desce.toFixed(0)} mm` : `giro ${giro.toFixed(1)}°`;
+  document.getElementById('vExp').textContent = `${(e * 100).toFixed(0)} %`;
+  const a = +rAng.value * Math.PI / 180;
+  // mantém o lado de trás do plano que contém o eixo Z e a direção a (o corte passa pelo centro do pino em a)
+  plano.normal.set(-Math.sin(a), Math.cos(a), 0); plano.constant = 0;
+  document.getElementById('vAng').textContent = `${rAng.value}°`;
+  for (const p of PECAS) {
+    const o = meshes[p.id]; if (!o) continue;
+    o.material.clippingPlanes = cCorte.checked ? [plano] : [];
+    o.userData.cap.material.clippingPlanes = o.material.clippingPlanes;
+    o.userData.cap.visible = cCorte.checked && p.op >= 0.999;
+  }
+  const est = m >= 0.999 ? 'luva travada' : m <= 0.6 ? 'luva entrando' : 'luva girando';
+  document.getElementById('estado').textContent = `${est}${cCorte.checked ? ` · corte a ${rAng.value}°` : ''}`;
+}
+for (const el of [rMont, rExp, rAng, cCorte]) el.oninput = el.onchange = atualizar;
+for (const b of document.querySelectorAll('[data-ang]')) b.onclick = () => { rAng.value = b.dataset.ang; cCorte.checked = true; atualizar(); };
+
+let anim = null;
+document.getElementById('bAnim').onclick = () => {
+  const t0 = performance.now(), dur = 5000;
+  anim = t => { const k = Math.min(1, (t - t0) / dur); rMont.value = k; atualizar(); if (k >= 1) anim = null; };
+};
+
+const loader = new STLLoader();
+const base = 'stl/';
+Promise.all([
+  fetch(base + 'pos.json').then(r => r.json()).then(j => { POS = j; }),
+  ...PECAS.map(p => new Promise((ok, erro) => loader.load(base + p.id + '.stl', geo => {
+    geo.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({ color: p.cor, metalness: p.id.startsWith('parafusos') ? 0.6 : 0.05,
+                                                 roughness: p.id.startsWith('parafusos') ? 0.35 : 0.6, side: THREE.DoubleSide });
+    material(mat, p.op);
+    const o = new THREE.Mesh(geo, mat); o.renderOrder = p.op < 1 ? 1 : 0;
+    // "tampa" do corte: o avesso da peça em cor chapada mais clara aparece só onde o plano abriu a peça
+    const cap = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: new THREE.Color(p.cor).lerp(new THREE.Color(0xffffff), 0.35),
+                                                                  side: THREE.BackSide }));
+    o.userData.cap = cap; o.add(cap);
+    meshes[p.id] = o; scene.add(o); ok();
+  }, undefined, erro))),
+]).then(() => {
+  document.getElementById('carregando').remove();
+  document.getElementById('tGiro').textContent = `${POS.giro_trava.toFixed(1)}°`;
+  visoes.vIso(); atualizar();
+}).catch(e => { document.getElementById('carregando').textContent = 'erro ao carregar: ' + e; });
+
+renderer.setAnimationLoop(t => { if (anim) anim(t); controls.update(); renderer.render(scene, camera); });
+ajustar();
+</script>
+</body>
+</html>

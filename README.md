@@ -4,4 +4,7 @@ Simulador 3D (three.js) do mobiliário do Termômetro das Competências: caixa d
 
 Abrir: https://fazmakerspace.github.io/termometro-competencias-simulador/
 
-Arquivo único (`index.html`); as bibliotecas vêm do jsDelivr (three.js 0.160.0, polygon-clipping 0.15.7).
+Visualizador da montagem do copo (encaixe ETA V2f: tubo, luva, copo, anel, tampo e parafusos, com corte e animação da baioneta):
+https://fazmakerspace.github.io/termometro-competencias-simulador/encaixe/
+
+Simulador em arquivo único (`index.html`); visualizador em `encaixe/` (STLs em `encaixe/stl/`). As bibliotecas vêm do jsDelivr (three.js 0.160.0, polygon-clipping 0.15.7).
