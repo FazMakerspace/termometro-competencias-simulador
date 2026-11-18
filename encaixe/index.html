@@ -95,15 +95,18 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 
 const PECAS = [
-  // nome, rótulo, cor, opacidade, explosão (mm em Z), segue a luva na montagem
-  { id: 'tubo',           nome: 'Tubo de acrílico Ø200 × 4', cor: 0xbfe3ff, op: 0.28, exp: 330, luva: true },
-  { id: 'luva',           nome: 'Luva (tubo 200)',            cor: 0xe6e6e6, op: 1.0,  exp: 230, luva: true },
-  { id: 'anel',           nome: 'Anel de acabamento',         cor: 0x3557b0, op: 1.0,  exp: 150 },
+  // nome, rótulo, cor, opacidade, explosão (mm em Z), segue a luva na montagem.
+  // Vista explodida, de cima para baixo: tubo, luva, anel, parafusos M4 (com a arruela de cima), tampo, copo (+ pinos),
+  // Fundo do Copo e, por último, arruela de baixo + porca.
+  { id: 'tubo',           nome: 'Tubo de acrílico Ø200 × 4', cor: 0xbfe3ff, op: 0.28, exp: 380, luva: true },
+  { id: 'luva',           nome: 'Luva (tubo 200)',            cor: 0xe6e6e6, op: 1.0,  exp: 280, luva: true },
+  { id: 'anel',           nome: 'Anel de acabamento',         cor: 0x3557b0, op: 1.0,  exp: 190 },
+  { id: 'parafusos_m4',   nome: '6 × M4 × 80 + arruela',      cor: 0xb9c2cc, op: 1.0,  exp: 170 },
   { id: 'tampa',          nome: 'Tampo MDF 6 (segmento)',     cor: 0xb8915e, op: 0.85, exp: 75 },
   { id: 'copo',           nome: 'Copo Ø205',                  cor: 0x2f4f9e, op: 1.0,  exp: 0 },
   { id: 'parafusos_pino', nome: 'Parafusos-pino 3,5 × 13',    cor: 0xff7a45, op: 1.0,  exp: 0 },
-  { id: 'parafusos_m4',   nome: '6 × M4 × 80 + arruelas + porca', cor: 0xb9c2cc, op: 1.0, exp: 0 },
-  { id: 'fundo',          nome: 'Fundo do Copo (MDF 6, laser)', cor: 0x9c7a4f, op: 1.0,  exp: -90 },
+  { id: 'fundo',          nome: 'Fundo do Copo (MDF 6, laser)', cor: 0x9c7a4f, op: 1.0, exp: -90 },
+  { id: 'porcas_m4',      nome: '6 × arruela + porca parlock', cor: 0xd7dde3, op: 1.0, exp: -140 },
 ];
 
 const vista = document.getElementById('vista');
@@ -131,14 +134,18 @@ function ajustar() {
 }
 new ResizeObserver(ajustar).observe(vista);
 
-function cam(pos, alvo = [0, 0, 40]) {
-  camera.position.set(...pos); controls.target.set(...alvo); controls.update();
+function cam(pos, alvo = [0, 0, 40], explodir = true) {
+  // com a vista explodida, as vistas gerais sobem o alvo e se afastam para caber a pilha inteira
+  const e = explodir ? +document.getElementById('rExp').value : 0;
+  const t = new THREE.Vector3(alvo[0], alvo[1], alvo[2] + 110 * e);
+  const p = new THREE.Vector3(...pos).sub(new THREE.Vector3(...alvo)).multiplyScalar(1 + 0.9 * e).add(t);
+  camera.position.copy(p); controls.target.copy(t); controls.update();
 }
 // olha a face do corte (plano que passa pelo eixo no ângulo ang), do lado removido
 function zoomCorte(ang, r, z, dist) {
   rAng.value = ang; cCorte.checked = true; atualizar();
   const a = ang * Math.PI / 180, nx = -Math.sin(a), ny = Math.cos(a);
-  cam([r * Math.cos(a) - dist * nx, r * Math.sin(a) - dist * ny, z + dist * 0.2], [r * Math.cos(a), r * Math.sin(a), z]);
+  cam([r * Math.cos(a) - dist * nx, r * Math.sin(a) - dist * ny, z + dist * 0.2], [r * Math.cos(a), r * Math.sin(a), z], false);
 }
 const visoes = {
   vIso: () => cam([420, -520, 380]),
@@ -194,6 +201,7 @@ function atualizar() {
   document.getElementById('estado').textContent = `${est}${cCorte.checked ? ` · corte a ${rAng.value}°` : ''}`;
 }
 for (const el of [rMont, rExp, rAng, cCorte]) el.oninput = el.onchange = atualizar;
+rExp.onchange = () => { atualizar(); visoes.vIso(); };  // ao soltar o controle, reenquadra
 for (const b of document.querySelectorAll('[data-ang]')) b.onclick = () => { rAng.value = b.dataset.ang; cCorte.checked = true; atualizar(); };
 
 let anim = null;
