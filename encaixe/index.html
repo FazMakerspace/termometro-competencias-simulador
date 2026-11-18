@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Encaixe ETA V2f</title>
+<title>Encaixe ETA V2g</title>
 <style>
   :root { --bg:#16181d; --painel:#1e2128; --txt:#d8dade; --sub:#9aa0aa; --borda:#2d313a; }
   * { box-sizing: border-box; }
@@ -36,9 +36,9 @@
 <div class="wrap">
   <div id="vista"><div id="carregando">carregando peças…</div><div id="estado"></div></div>
   <div class="card">
-    <h1>Encaixe do tubo na tampa — ETA V2f</h1>
-    <div class="k">Montagem de 1 copo: tubo Ø200 × 4, luva (tubo 200), copo Ø205 interno, anel, segmento de 300 × 300 do tampo MDF 6
-      com furo Ø210, MDF 6 de baixo e parafusos. Peças do modelo encaixe_copo_V2f.FCStd, já na posição de montagem.</div>
+    <h1>Encaixe do tubo na tampa — ETA V2g</h1>
+    <div class="k">Montagem de 1 copo: tubo Ø200 × 4, luva (tubo 200), copo Ø205 interno (sem fundo), anel, segmento de 300 × 300 do tampo MDF 6
+      com furo Ø210, Fundo do Copo (MDF 6, laser) e parafusos. Peças do modelo encaixe_copo_V2g.FCStd, já na posição de montagem.</div>
 
     <h2>Peças</h2>
     <div id="pecas"></div>
@@ -55,9 +55,9 @@
 
     <h2>Corte</h2>
     <div class="linha"><label><input type="checkbox" id="cCorte" checked> cortar pelo eixo</label></div>
-    <div class="linha"><label>ângulo</label><input type="range" id="rAng" min="0" max="360" step="1" value="30"><span class="val" id="vAng"></span></div>
+    <div class="linha"><label>ângulo</label><input type="range" id="rAng" min="0" max="360" step="0.5" value="32.5"><span class="val" id="vAng"></span></div>
     <div class="botoes">
-      <button data-ang="30">pelo pino (30°)</button>
+      <button data-ang="32.5">pelo pino</button>
       <button data-ang="90">pelo M4 (90°)</button>
       <button data-ang="60">entre torres</button>
     </div>
@@ -65,16 +65,17 @@
     <h2>Câmera</h2>
     <div class="botoes">
       <button id="vIso">3D</button><button id="vFrente">frente</button><button id="vCima">de cima</button>
-      <button id="vBaixo">de baixo</button><button id="vPino">zoom no pino</button>
+      <button id="vBaixo">de baixo</button><button id="vPino">zoom no pino</button><button id="vM4">zoom no M4</button>
     </div>
 
     <h2>Parafusos</h2>
     <div class="k">
       <b style="color:#ff7a45">Pinos da baioneta (3×):</b> autoatarraxante cabeça panela 3,5 × 13 (DIN 7981), aparafusado de dentro do copo
-      para fora, radial, a 30° / 150° / 270°, 9,5 mm acima do fundo do copo. A rosca fica toda na parede (2,5) + torre (10,5);
-      a ponta para ~4,4 mm antes da face da torre. A cabeça (Ø6,9 × 2,6) fica para dentro e corre no sulco da luva (2,75 de fundo).<br>
-      <b style="color:#b9c2cc">M4 × 80 (3×):</b> de baixo, cabeça + arruela sob o MDF 6 de baixo → torre do copo → aba → tampo →
-      porca parlock embutida no anel, a 90° / 210° / 330°, círculo de raio 115.
+      para fora, radial, nas torres de 30° / 150° / 270°, deslocado 5 mm do eixo da torre (para não pegar o M4), 7,5 mm acima da base do copo.
+      Rosca na parede (2,5) + torre; ~1 mm de parede até o furo do M4. A cabeça (Ø6,9 × 2,6) fica para dentro e corre no sulco da luva.<br>
+      <b style="color:#b9c2cc">M4 × 80 (6×, um por torre) — "fundo suspenso":</b> cabeça sextavada + arruela em cima do tampo, escondidas no
+      alojamento Ø10 da face de baixo do anel → tampo → aba → torre → Fundo do Copo → arruela + porca parlock por baixo (sobram 2,7 mm de ponta).
+      O Fundo do Copo (disco Ø244 de MDF 6) fica pendurado nos 6 parafusos e segura luva + tubo.
     </div>
     <h2>Conferido no modelo</h2>
     <div class="k" id="conf">Sem interferência entre tubo, luva, copo, anel, tampo e M4. Luva desce livre com as entradas nas cabeças;
@@ -101,8 +102,8 @@ const PECAS = [
   { id: 'tampa',          nome: 'Tampo MDF 6 (segmento)',     cor: 0xb8915e, op: 0.85, exp: 75 },
   { id: 'copo',           nome: 'Copo Ø205',                  cor: 0x2f4f9e, op: 1.0,  exp: 0 },
   { id: 'parafusos_pino', nome: 'Parafusos-pino 3,5 × 13',    cor: 0xff7a45, op: 1.0,  exp: 0 },
-  { id: 'parafusos_m4',   nome: 'M4 × 80 + arruela + porca',  cor: 0xb9c2cc, op: 1.0,  exp: -150, porca: true },
-  { id: 'mdf_baixo',      nome: 'MDF 6 de baixo (segmento)',  cor: 0x9c7a4f, op: 0.85, exp: -75 },
+  { id: 'parafusos_m4',   nome: '6 × M4 × 80 + arruelas + porca', cor: 0xb9c2cc, op: 1.0, exp: 0 },
+  { id: 'fundo',          nome: 'Fundo do Copo (MDF 6, laser)', cor: 0x9c7a4f, op: 1.0,  exp: -90 },
 ];
 
 const vista = document.getElementById('vista');
@@ -133,16 +134,20 @@ new ResizeObserver(ajustar).observe(vista);
 function cam(pos, alvo = [0, 0, 40]) {
   camera.position.set(...pos); controls.target.set(...alvo); controls.update();
 }
+// olha a face do corte (plano que passa pelo eixo no ângulo ang), do lado removido
+function zoomCorte(ang, r, z, dist) {
+  rAng.value = ang; cCorte.checked = true; atualizar();
+  const a = ang * Math.PI / 180, nx = -Math.sin(a), ny = Math.cos(a);
+  cam([r * Math.cos(a) - dist * nx, r * Math.sin(a) - dist * ny, z + dist * 0.2], [r * Math.cos(a), r * Math.sin(a), z]);
+}
 const visoes = {
   vIso: () => cam([420, -520, 380]),
   vFrente: () => cam([0, -760, 60]),
   vCima: () => cam([0, -1, 820], [0, 0, 0]),
   vBaixo: () => cam([0, -1, -760], [0, 0, 0]),
   // olha a face do corte (plano que passa pelo eixo e pelo pino a 30°), do lado removido
-  vPino: () => { const a = POS.ang_pino * Math.PI / 180, r = 106, z = POS.z_pino;
-                 rAng.value = POS.ang_pino; cCorte.checked = true; atualizar();
-                 const nx = -Math.sin(a), ny = Math.cos(a);
-                 cam([r * Math.cos(a) - 110 * nx, r * Math.sin(a) - 110 * ny, z + 25], [r * Math.cos(a), r * Math.sin(a), z]); },
+  vPino: () => zoomCorte(POS.ang_pino, 106, POS.z_pino, 110),
+  vM4: () => zoomCorte(90, 115, POS.z_boca / 2, 260),
 };
 for (const id in visoes) document.getElementById(id).onclick = visoes[id];
 
